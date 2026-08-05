@@ -11,13 +11,19 @@ import java.util.concurrent.TimeUnit
 
 object Rede {
 
+    /** URLs das fontes de reserva. So a primaria e configuravel. */
+    private const val BASE_OURO = "https://api.gold-api.com/"
+    private const val BASE_CAMBIO = "https://api.frankfurter.app/"
+
     private val json = Json {
         ignoreUnknownKeys = true
         coerceInputValues = true
         isLenient = true
     }
 
-    private fun cliente(): OkHttpClient =
+    // Um unico OkHttpClient para as tres APIs: pool de conexoes e cache de DNS
+    // compartilhados, e menos threads paradas.
+    private val cliente: OkHttpClient by lazy {
         OkHttpClient.Builder()
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(20, TimeUnit.SECONDS)
@@ -31,12 +37,19 @@ object Rede {
                 }
             }
             .build()
+    }
 
-    fun criarApi(baseUrl: String = BuildConfig.COTACAO_BASE_URL): MetaisApi =
+    private fun retrofit(baseUrl: String): Retrofit =
         Retrofit.Builder()
             .baseUrl(if (baseUrl.endsWith("/")) baseUrl else "$baseUrl/")
-            .client(cliente())
+            .client(cliente)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
-            .create(MetaisApi::class.java)
+
+    fun criarAwesome(baseUrl: String = BuildConfig.COTACAO_BASE_URL): AwesomeApi =
+        retrofit(baseUrl).create(AwesomeApi::class.java)
+
+    fun criarOuro(): OuroApi = retrofit(BASE_OURO).create(OuroApi::class.java)
+
+    fun criarCambio(): CambioApi = retrofit(BASE_CAMBIO).create(CambioApi::class.java)
 }

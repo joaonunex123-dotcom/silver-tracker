@@ -34,8 +34,18 @@ Ou abrir a pasta direto no Android Studio.
 
 ## API de cotação
 
-**Não precisa de chave.** A fonte é a [AwesomeAPI](https://economia.awesomeapi.com.br), em uma única
-chamada:
+**Nenhuma das fontes precisa de chave.** Há uma primária e uma reserva, tentadas em ordem:
+
+| Ordem | Fonte | Entrega |
+|---|---|---|
+| 1 | AwesomeAPI | prata em BRL/oz troy e dólar, numa chamada |
+| 2 | gold-api.com + frankfurter.app | prata em USD/oz troy e câmbio, duas chamadas |
+
+A reserva existe porque o limite anônimo da AwesomeAPI é **por IP**, e operadora de celular usa NAT
+compartilhado: milhares de aparelhos saem pelo mesmo IP e o app leva `HTTP 429` sem o usuário ter
+feito nada. Em rede móvel isso acontece com facilidade.
+
+A fonte primária, em uma única chamada:
 
 ```
 GET https://economia.awesomeapi.com.br/json/last/XAG-BRL,USD-BRL

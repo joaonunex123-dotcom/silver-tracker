@@ -31,7 +31,9 @@ class ContainerApp(context: Context) {
     val cotacaoRepository by lazy {
         CotacaoRepository(
             dao = banco.cotacaoDao(),
-            api = Rede.criarApi(),
+            awesome = Rede.criarAwesome(),
+            ouro = Rede.criarOuro(),
+            cambio = Rede.criarCambio(),
         )
     }
 }
