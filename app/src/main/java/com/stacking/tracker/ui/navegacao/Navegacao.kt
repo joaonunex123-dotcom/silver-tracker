@@ -1,21 +1,31 @@
 package com.stacking.tracker.ui.navegacao
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material.icons.outlined.PieChart
 import androidx.compose.material.icons.outlined.TrendingUp
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
@@ -32,6 +42,7 @@ import com.stacking.tracker.ui.dashboard.DashboardScreen
 import com.stacking.tracker.ui.detalhe.DetalheScreen
 import com.stacking.tracker.ui.editor.EditorScreen
 import com.stacking.tracker.ui.inventario.InventarioScreen
+import com.stacking.tracker.ui.theme.EstiloRotulo
 import com.stacking.tracker.ui.theme.ModoTema
 
 object Rotas {
@@ -71,6 +82,9 @@ private val ABAS = listOf(
     ItemAba(Rotas.COTACAO, "Cotacao", Icons.Outlined.TrendingUp),
 )
 
+/** Altura da faixa clicavel, sem contar o inset do sistema. */
+private val ALTURA_ABAS = 52.dp
+
 @Composable
 fun AppNavegacao(
     modoTema: ModoTema,
@@ -89,26 +103,10 @@ fun AppNavegacao(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             if (mostrarAbas) {
-                NavigationBar(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
-                    tonalElevation = 0.dp,
-                ) {
-                    ABAS.forEach { aba ->
-                        NavigationBarItem(
-                            selected = rotaAtual == aba.rota,
-                            onClick = { navController.irParaAba(aba.rota) },
-                            icon = { Icon(aba.icone, contentDescription = null) },
-                            label = { Text(aba.rotulo, style = MaterialTheme.typography.labelSmall) },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = MaterialTheme.colorScheme.onSurface,
-                                selectedTextColor = MaterialTheme.colorScheme.onSurface,
-                                indicatorColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            ),
-                        )
-                    }
-                }
+                BarraAbas(
+                    rotaAtual = rotaAtual,
+                    onAba = { rota -> navController.irParaAba(rota) },
+                )
             }
         },
     ) { paddings ->
@@ -162,6 +160,60 @@ fun AppNavegacao(
                     onVoltar = { navController.popBackStack() },
                     onSalvo = { navController.popBackStack() },
                 )
+            }
+        }
+    }
+}
+
+/**
+ * Barra de abas propria em vez do NavigationBar do Material 3, que tem 80dp fixos
+ * por especificacao e ainda soma o inset do sistema — no aparelho isso passava de
+ * 100dp para tres icones. Aqui a faixa clicavel tem [ALTURA_ABAS] e o inset entra
+ * como padding, entao o app ganha de volta quase metade dessa altura.
+ */
+@Composable
+private fun BarraAbas(
+    rotaAtual: String?,
+    onAba: (String) -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outline)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+                .windowInsetsPadding(WindowInsets.navigationBars)
+                .height(ALTURA_ABAS),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            ABAS.forEach { aba ->
+                val ativo = rotaAtual == aba.rota
+                val cor = if (ativo) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                }
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clickable { onAba(aba.rota) },
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Icon(
+                        imageVector = aba.icone,
+                        contentDescription = aba.rotulo,
+                        tint = cor,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Text(
+                        text = aba.rotulo,
+                        style = EstiloRotulo,
+                        color = cor,
+                        modifier = Modifier.padding(top = 3.dp),
+                    )
+                }
             }
         }
     }

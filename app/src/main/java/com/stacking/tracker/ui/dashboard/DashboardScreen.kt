@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -43,17 +44,22 @@ import com.stacking.tracker.core.formatarGramas
 import com.stacking.tracker.core.formatarOz
 import com.stacking.tracker.core.formatarPercentAssinado
 import com.stacking.tracker.core.formatarUsd
+import com.stacking.tracker.core.precoPorGrama
 import com.stacking.tracker.ui.FabricaViewModel
-import com.stacking.tracker.ui.componentes.CartaoMetrica
-import com.stacking.tracker.ui.componentes.LinhaDado
+import com.stacking.tracker.ui.componentes.MetricaCompacta
 import com.stacking.tracker.ui.componentes.Painel
 import com.stacking.tracker.ui.componentes.Rotulo
-import com.stacking.tracker.ui.componentes.Separador
 import com.stacking.tracker.ui.theme.EstiloNumeroHero
+import com.stacking.tracker.ui.theme.EstiloNumeroMedio
 import com.stacking.tracker.ui.theme.LocalCoresValor
 import com.stacking.tracker.ui.theme.ModoTema
 import com.stacking.tracker.ui.theme.para
 
+/**
+ * O Painel foi desenhado para caber **sem rolagem** num telefone comum: blocos
+ * densos em vez de listas longas. O verticalScroll fica so como rede de seguranca
+ * para telas pequenas ou fonte do sistema muito grande — em uso normal nao engata.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
@@ -77,6 +83,9 @@ fun DashboardScreen(
     Scaffold(
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
+        // O inset de baixo ja e consumido pela barra de abas; a TopAppBar cuida do
+        // de cima sozinha. Sem isso, sobra uma faixa morta acima das abas.
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
@@ -118,8 +127,8 @@ fun DashboardScreen(
                 .padding(paddings)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp)
-                .padding(bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(bottom = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             if (!estado.carregando && estado.resumo.quantidadePecas == 0) {
                 PrimeirosPassos(
@@ -129,56 +138,9 @@ fun DashboardScreen(
                 )
             }
             ValorDeMercado(estado.resumo, onVerCotacao)
-            LinhaDeMetricas(estado.resumo)
-            BlocoEstoque(estado.resumo)
-            if (estado.porTipo.isNotEmpty()) BlocoPorTipo(estado.porTipo)
+            LinhaInvestimento(estado.resumo)
+            LinhaEstoque(estado.resumo)
             BlocoSpot(estado.resumo, onVerCotacao)
-        }
-    }
-}
-
-/**
- * Carteira vazia: a ordem importa. Sem cotacao no historico o premio de qualquer
- * peca cadastrada sai vazio, entao a cotacao vem primeiro.
- */
-@Composable
-private fun PrimeirosPassos(
-    temCotacao: Boolean,
-    onVerCotacao: () -> Unit,
-    onVerInventario: () -> Unit,
-) {
-    Painel(modifier = Modifier.fillMaxWidth()) { interno ->
-        Column(
-            modifier = interno.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Rotulo("Primeiros passos")
-            Text(
-                text = if (temCotacao) {
-                    "Cotacao registrada. Agora cadastre suas pecas no Inventario."
-                } else {
-                    "Registre a cotacao antes de cadastrar as pecas: o premio de cada compra " +
-                        "e calculado contra o spot do dia dela."
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                if (!temCotacao) {
-                    TextButton(
-                        onClick = onVerCotacao,
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                    ) {
-                        Text("Lancar cotacao", style = MaterialTheme.typography.bodySmall)
-                    }
-                }
-                TextButton(
-                    onClick = onVerInventario,
-                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                ) {
-                    Text("Adicionar peca", style = MaterialTheme.typography.bodySmall)
-                }
-            }
         }
     }
 }
@@ -190,23 +152,19 @@ private fun ValorDeMercado(resumo: ResumoCarteira, onVerCotacao: () -> Unit) {
     Painel(modifier = Modifier.fillMaxWidth()) { interno ->
         Column(
             modifier = interno.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             Rotulo("Valor de mercado")
             Text(
                 text = if (resumo.temCotacao) formatarBrl(resumo.valorMercado) else "--",
                 style = EstiloNumeroHero,
                 color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                text = "${formatarOz(resumo.totalOzFinas)} finas  ${formatarGramas(resumo.totalGramas)} brutos",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
             )
 
             if (resumo.temCotacao) {
                 Row(
-                    modifier = Modifier.padding(top = 8.dp),
+                    modifier = Modifier.padding(top = 2.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -224,11 +182,11 @@ private fun ValorDeMercado(resumo: ResumoCarteira, onVerCotacao: () -> Unit) {
                     }
                 }
             } else {
-                TextButton(
-                    onClick = onVerCotacao,
-                    contentPadding = PaddingValues(0.dp),
-                ) {
-                    Text("Sem cotacao registrada. Atualizar agora", style = MaterialTheme.typography.bodySmall)
+                TextButton(onClick = onVerCotacao, contentPadding = PaddingValues(0.dp)) {
+                    Text(
+                        text = "Sem cotacao. Registrar agora",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
                 }
             }
         }
@@ -236,64 +194,44 @@ private fun ValorDeMercado(resumo: ResumoCarteira, onVerCotacao: () -> Unit) {
 }
 
 @Composable
-private fun LinhaDeMetricas(resumo: ResumoCarteira) {
+private fun LinhaInvestimento(resumo: ResumoCarteira) {
     val cores = LocalCoresValor.current
 
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        CartaoMetrica(
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        MetricaCompacta(
             rotulo = "Investido",
             valor = formatarBrl(resumo.totalInvestido),
-            apoio = resumo.custoMedioPorOzFina?.let { "${formatarBrl(it)} / oz fina" },
             modifier = Modifier.weight(1f),
         )
-        CartaoMetrica(
-            rotulo = "Lucro / prejuizo",
-            valor = if (resumo.temCotacao) formatarBrlAssinado(resumo.lucro) else "--",
-            apoio = resumo.lucroPercent?.let { formatarPercentAssinado(it) },
-            corValor = if (resumo.temCotacao) cores.para(resumo.lucro) else MaterialTheme.colorScheme.onSurface,
+        MetricaCompacta(
+            rotulo = "Premio medio",
+            valor = resumo.premioMedioPercent?.let { formatarPercentAssinado(it) } ?: "--",
+            // Premio alto e ruim para quem compra: inverte o sinal da cor.
+            corValor = resumo.premioMedioPercent?.let { cores.para(-it) }
+                ?: MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f),
         )
     }
 }
 
 @Composable
-private fun BlocoEstoque(resumo: ResumoCarteira) {
-    Painel(modifier = Modifier.fillMaxWidth()) { interno ->
-        Column(modifier = interno.fillMaxWidth()) {
-            Rotulo("Estoque")
-            LinhaDado("Pecas", resumo.quantidadePecas.toString())
-            Separador()
-            LinhaDado("Peso bruto", formatarGramas(resumo.totalGramas))
-            Separador()
-            LinhaDado("Oncas troy (bruto)", formatarOz(resumo.totalOzTroy))
-            Separador()
-            LinhaDado("Oncas finas (ASW)", formatarOz(resumo.totalOzFinas))
-            Separador()
-            LinhaDado(
-                rotulo = "Premio medio pago",
-                valor = resumo.premioMedioPercent?.let { formatarPercentAssinado(it) } ?: "--",
-                corValor = resumo.premioMedioPercent?.let {
-                    // Premio alto e ruim para quem compra: inverte o sinal da cor.
-                    LocalCoresValor.current.para(-it)
-                } ?: MaterialTheme.colorScheme.onSurface,
-            )
-        }
-    }
-}
-
-@Composable
-private fun BlocoPorTipo(linhas: List<LinhaTipo>) {
-    Painel(modifier = Modifier.fillMaxWidth()) { interno ->
-        Column(modifier = interno.fillMaxWidth()) {
-            Rotulo("Por tipo")
-            linhas.forEachIndexed { indice, linha ->
-                if (indice > 0) Separador()
-                LinhaDado(
-                    rotulo = "${linha.tipo.rotulo}  ${linha.quantidade}",
-                    valor = formatarOz(linha.ozFinas),
-                )
-            }
-        }
+private fun LinhaEstoque(resumo: ResumoCarteira) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        MetricaCompacta(
+            rotulo = "Pecas",
+            valor = resumo.quantidadePecas.toString(),
+            modifier = Modifier.weight(1f),
+        )
+        MetricaCompacta(
+            rotulo = "Oz finas",
+            valor = formatarOz(resumo.totalOzFinas),
+            modifier = Modifier.weight(1.3f),
+        )
+        MetricaCompacta(
+            rotulo = "Peso",
+            valor = formatarGramas(resumo.totalGramas),
+            modifier = Modifier.weight(1.3f),
+        )
     }
 }
 
@@ -301,30 +239,103 @@ private fun BlocoPorTipo(linhas: List<LinhaTipo>) {
 private fun BlocoSpot(resumo: ResumoCarteira, onVerCotacao: () -> Unit) {
     val cotacao = resumo.cotacao
 
-    Painel(modifier = Modifier.fillMaxWidth()) { interno ->
-        Column(modifier = interno.fillMaxWidth()) {
+    Painel(modifier = Modifier.fillMaxWidth(), paddingV = 12.dp) { interno ->
+        Column(
+            modifier = interno.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Rotulo("Spot da prata")
-                TextButton(onClick = onVerCotacao) {
-                    Text("Detalhes", style = MaterialTheme.typography.bodySmall)
+                if (cotacao != null) {
+                    Text(
+                        text = formatarDataHora(cotacao.data),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
+
             if (cotacao == null) {
-                Text(
-                    text = "Nenhuma cotacao registrada.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                TextButton(onClick = onVerCotacao, contentPadding = PaddingValues(0.dp)) {
+                    Text("Nenhuma cotacao registrada", style = MaterialTheme.typography.bodySmall)
+                }
             } else {
-                LinhaDado("USD / oz", formatarUsd(cotacao.precoOzUsd))
-                Separador()
-                LinhaDado("BRL / oz", formatarBrl(cotacao.precoOzBrl))
-                Separador()
-                LinhaDado("Atualizado", formatarDataHora(cotacao.data))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    ValorSpot("por grama", formatarBrl(precoPorGrama(cotacao.precoOzBrl)))
+                    ValorSpot("BRL / oz", formatarBrl(cotacao.precoOzBrl))
+                    ValorSpot("USD / oz", formatarUsd(cotacao.precoOzUsd))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ValorSpot(rotulo: String, valor: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+        Text(
+            text = rotulo,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+        )
+        Text(
+            text = valor,
+            style = EstiloNumeroMedio,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+        )
+    }
+}
+
+/**
+ * Carteira vazia: a ordem importa. Sem cotacao no historico o premio de qualquer
+ * peca cadastrada sai vazio, entao a cotacao vem primeiro.
+ */
+@Composable
+private fun PrimeirosPassos(
+    temCotacao: Boolean,
+    onVerCotacao: () -> Unit,
+    onVerInventario: () -> Unit,
+) {
+    Painel(modifier = Modifier.fillMaxWidth(), paddingV = 12.dp) { interno ->
+        Column(
+            modifier = interno.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Rotulo("Primeiros passos")
+            Text(
+                text = if (temCotacao) {
+                    "Cotacao registrada. Agora cadastre suas pecas no Inventario."
+                } else {
+                    "Registre a cotacao antes das pecas: o premio de cada compra e " +
+                        "calculado contra o spot do dia dela."
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                if (!temCotacao) {
+                    TextButton(
+                        onClick = onVerCotacao,
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                    ) {
+                        Text("Lancar cotacao", style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+                TextButton(
+                    onClick = onVerInventario,
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                ) {
+                    Text("Adicionar peca", style = MaterialTheme.typography.bodySmall)
+                }
             }
         }
     }

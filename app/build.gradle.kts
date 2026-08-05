@@ -30,8 +30,8 @@ android {
         applicationId = "com.stacking.tracker"
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.1"
+        versionCode = 3
+        versionName = "1.1.1"
 
         // A AwesomeAPI nao pede chave, entao nao ha segredo a embutir no APK.
         // A URL segue configuravel para apontar a um proxy ou a um mock.

@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.stacking.tracker.ui.theme.EstiloNumeroGrande
 import com.stacking.tracker.ui.theme.EstiloNumeroMedio
@@ -41,6 +42,8 @@ fun Rotulo(
 @Composable
 fun Painel(
     modifier: Modifier = Modifier,
+    paddingH: Dp = 16.dp,
+    paddingV: Dp = 14.dp,
     conteudo: @Composable (Modifier) -> Unit,
 ) {
     Box(
@@ -55,7 +58,34 @@ fun Painel(
                 shape = RoundedCornerShape(10.dp),
             ),
     ) {
-        conteudo(Modifier.padding(horizontal = 16.dp, vertical = 14.dp))
+        conteudo(Modifier.padding(horizontal = paddingH, vertical = paddingV))
+    }
+}
+
+/**
+ * Metrica enxuta para grades densas: rotulo pequeno e numero medio.
+ * Existe para o Painel caber na tela sem rolagem.
+ */
+@Composable
+fun MetricaCompacta(
+    rotulo: String,
+    valor: String,
+    modifier: Modifier = Modifier,
+    corValor: Color = MaterialTheme.colorScheme.onSurface,
+) {
+    Painel(modifier = modifier, paddingH = 12.dp, paddingV = 10.dp) { interno ->
+        Column(
+            modifier = interno.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(3.dp),
+        ) {
+            Rotulo(rotulo)
+            Text(
+                text = valor,
+                style = EstiloNumeroMedio,
+                color = corValor,
+                maxLines = 1,
+            )
+        }
     }
 }
 
