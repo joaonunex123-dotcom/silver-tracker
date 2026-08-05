@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
@@ -36,10 +36,28 @@ jobs:
           restore-keys: gradle-
 
       - name: Testes unitarios
-        run: ./gradlew testDebugUnitTest --no-daemon --stacktrace
+        run: |
+          set -o pipefail
+          ./gradlew testDebugUnitTest --no-daemon --stacktrace 2>&1 | tee gradle.log
 
       - name: APK de debug
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        run: |
+          set -o pipefail
+          ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee -a gradle.log
+
+      # O log completo do Actions exige login. Anotacoes, nao. Entao o erro do
+      # Gradle e reemitido como anotacao para ficar legivel sem autenticacao.
+      - name: Erro do Gradle nas anotacoes
+        if: failure()
+        run: |
+          codificar() { sed 's/%/%25/g; s/\r//g' | awk '{ printf "%s%%0A", $0 }'; }
+
+          RELEVANTE=$(grep -nE "^(e: |w: |FAILURE|\* What went wrong|\* Try|Caused by|> )" gradle.log | head -n 40 | codificar)
+          if [ -n "$RELEVANTE" ]; then
+            echo "::error title=Erro do Gradle::${RELEVANTE}"
+          fi
+
+          echo "::error title=Fim do log::$(tail -n 40 gradle.log | codificar)"
 
       - name: Publica o APK como artefato
         uses: actions/upload-artifact@v4
