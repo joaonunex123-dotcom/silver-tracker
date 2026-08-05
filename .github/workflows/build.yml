@@ -52,9 +52,16 @@ jobs:
         run: |
           codificar() { sed 's/%/%25/g; s/\r//g' | awk '{ printf "%s%%0A", $0 }'; }
 
-          RELEVANTE=$(grep -nE "^(e: |w: |FAILURE|\* What went wrong|\* Try|Caused by|> )" gradle.log | head -n 40 | codificar)
-          if [ -n "$RELEVANTE" ]; then
-            echo "::error title=Erro do Gradle::${RELEVANTE}"
+          # A secao "What went wrong" traz o diagnostico inteiro, incluindo
+          # detalhes indentados que um grep por prefixo perderia.
+          SECAO=$(awk '/^\* What went wrong:/{f=1} /^\* Try:/{f=0} f' gradle.log | head -n 80 | codificar)
+          if [ -n "$SECAO" ]; then
+            echo "::error title=O que deu errado::${SECAO}"
+          fi
+
+          ERROS_KOTLIN=$(grep -E "^e: " gradle.log | head -n 30 | codificar)
+          if [ -n "$ERROS_KOTLIN" ]; then
+            echo "::error title=Erros de compilacao Kotlin::${ERROS_KOTLIN}"
           fi
 
           echo "::error title=Fim do log::$(tail -n 40 gradle.log | codificar)"

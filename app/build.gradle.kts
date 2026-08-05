@@ -23,7 +23,10 @@ fun propriedade(chave: String, padrao: String): String =
 
 android {
     namespace = "com.stacking.tracker"
-    compileSdk = 36
+    // 37 e exigido pelas AndroidX atuais: androidx.core 1.19.0 declara
+    // minCompileSdk=37 no metadado do AAR. targetSdk segue em 36, que e o
+    // Android mais recente em que o app foi de fato exercitado.
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.stacking.tracker"
