@@ -18,7 +18,6 @@ data class EstadoCotacao(
     val historico: List<Cotacao> = emptyList(),
     val atualizando: Boolean = false,
     val mensagem: String? = null,
-    val apiConfigurada: Boolean = false,
 )
 
 class CotacaoViewModel(private val container: ContainerApp) : ViewModel() {
@@ -37,12 +36,11 @@ class CotacaoViewModel(private val container: ContainerApp) : ViewModel() {
             historico = historico,
             atualizando = ocupado,
             mensagem = aviso,
-            apiConfigurada = container.apiConfigurada,
         )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = EstadoCotacao(apiConfigurada = container.apiConfigurada),
+        initialValue = EstadoCotacao(),
     )
 
     fun atualizar() {
@@ -51,8 +49,6 @@ class CotacaoViewModel(private val container: ContainerApp) : ViewModel() {
             atualizando.value = true
             mensagem.value = when (val resultado = container.cotacaoRepository.atualizar()) {
                 is ResultadoCotacao.Sucesso -> "Cotacao atualizada."
-                ResultadoCotacao.SemChave ->
-                    "Sem chave de API. Preencha metals.api.key em local.properties ou lance a cotacao manualmente."
                 is ResultadoCotacao.Falha -> resultado.mensagem
             }
             atualizando.value = false

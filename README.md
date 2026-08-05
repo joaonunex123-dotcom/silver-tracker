@@ -32,33 +32,37 @@ O wrapper está versionado, então basta:
 
 Ou abrir a pasta direto no Android Studio.
 
-## Configuração da API de cotação
+## API de cotação
 
-Copie `local.properties.example` para `local.properties` e preencha:
+**Não precisa de chave.** A fonte é a [AwesomeAPI](https://economia.awesomeapi.com.br), em uma única
+chamada:
 
-```properties
-metals.api.baseUrl=https://api.metals.dev/v1/
-metals.api.key=SUA_CHAVE
 ```
-
-`local.properties` está no `.gitignore`. Os valores viram `BuildConfig.METALS_BASE_URL` e
-`BuildConfig.METALS_API_KEY`.
-
-O app espera do endpoint `latest` uma resposta assim:
+GET https://economia.awesomeapi.com.br/json/last/XAG-BRL,USD-BRL
+```
 
 ```json
 {
-  "metals":     { "silver": 31.42 },
-  "currencies": { "BRL": 5.42 }
+  "XAGBRL": { "bid": "319.76", "timestamp": "1785940081" },
+  "USDBRL": { "bid": "5.1293",  "timestamp": "1785951301" }
 }
 ```
 
-com o preço da prata em **USD por onça troy**. Outro formato? Ajuste
-[MetaisDto.kt](app/src/main/java/com/stacking/tracker/data/remote/MetaisDto.kt) e o mapeamento em
-[CotacaoRepository.atualizar()](app/src/main/java/com/stacking/tracker/data/repo/CotacaoRepository.kt).
+Ela entrega a prata **já em BRL por onça troy**, que é a moeda em que o app calcula tudo, e o dólar
+para derivar o preço em USD. Os valores vêm como string.
 
-**Sem chave o app continua funcionando.** A tela de Cotação tem "Lançar manual", que grava um spot
-digitado à mão no mesmo histórico — é o que alimenta valor de mercado, lucro e prêmio.
+A escolha por uma API sem chave é deliberada: o APK é publicado num Release público, e qualquer
+chave embutida nele estaria publicada junto — `BuildConfig` vira string no `.dex`, extraível em
+segundos.
+
+Trocar de provedor exige adaptar
+[MetaisDto.kt](app/src/main/java/com/stacking/tracker/data/remote/MetaisDto.kt),
+[MetaisApi.kt](app/src/main/java/com/stacking/tracker/data/remote/MetaisApi.kt) e o mapeamento em
+[CotacaoRepository.atualizar()](app/src/main/java/com/stacking/tracker/data/repo/CotacaoRepository.kt).
+A URL base pode ser sobrescrita com `cotacao.api.baseUrl` em `local.properties`.
+
+**Offline segue funcionando.** A tela de Cotação tem "Lançar manual", que grava um spot digitado à
+mão no mesmo histórico — útil também para registrar o spot de uma compra antiga.
 
 ## Telas
 

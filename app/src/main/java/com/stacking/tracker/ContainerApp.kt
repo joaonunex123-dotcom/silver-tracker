@@ -28,10 +28,6 @@ class ContainerApp(context: Context) {
         CotacaoRepository(
             dao = banco.cotacaoDao(),
             api = Rede.criarApi(),
-            chaveApi = BuildConfig.METALS_API_KEY,
         )
     }
-
-    /** Usado na tela de cotacao para explicar por que o botao nao funciona. */
-    val apiConfigurada: Boolean get() = BuildConfig.METALS_API_KEY.isNotBlank()
 }

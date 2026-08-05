@@ -3,10 +3,8 @@
 # Caminho do SDK do Android (o Android Studio preenche sozinho).
 sdk.dir=C\:\\Users\\SEU_USUARIO\\AppData\\Local\\Android\\Sdk
 
-# API de cotacao de metais.
-# O app espera uma resposta no formato:
-#   { "metals": { "silver": 31.42 }, "currencies": { "BRL": 5.42 } }
-# com preco em USD por onca troy. Se a sua API usa outro formato, ajuste
-# app/src/main/java/com/stacking/tracker/data/remote/MetaisDto.kt
-metals.api.baseUrl=https://api.metals.dev/v1/
-metals.api.key=
+# A API de cotacao NAO exige chave. Esta linha e opcional e so serve para apontar
+# o app a outro provedor, a um proxy ou a um mock em testes.
+# Trocar de provedor exige adaptar tambem MetaisDto.kt, MetaisApi.kt e o
+# mapeamento em CotacaoRepository.atualizar().
+# cotacao.api.baseUrl=https://economia.awesomeapi.com.br/

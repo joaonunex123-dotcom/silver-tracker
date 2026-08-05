@@ -7,7 +7,7 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
-// Le local.properties (fora do git) para manter URL e chave da API fora do codigo.
+// Le local.properties (fora do git) para permitir sobrescrever a URL da API.
 val propriedadesLocais = Properties().apply {
     val arquivo = rootProject.file("local.properties")
     if (arquivo.exists()) arquivo.inputStream().use { load(it) }
@@ -30,18 +30,15 @@ android {
         applicationId = "com.stacking.tracker"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
 
+        // A AwesomeAPI nao pede chave, entao nao ha segredo a embutir no APK.
+        // A URL segue configuravel para apontar a um proxy ou a um mock.
         buildConfigField(
             "String",
-            "METALS_BASE_URL",
-            "\"${propriedade("metals.api.baseUrl", "https://api.metals.dev/v1/")}\"",
-        )
-        buildConfigField(
-            "String",
-            "METALS_API_KEY",
-            "\"${propriedade("metals.api.key", "")}\"",
+            "COTACAO_BASE_URL",
+            "\"${propriedade("cotacao.api.baseUrl", "https://economia.awesomeapi.com.br/")}\"",
         )
     }
 

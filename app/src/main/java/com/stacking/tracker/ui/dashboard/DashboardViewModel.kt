@@ -71,7 +71,6 @@ class DashboardViewModel(private val container: ContainerApp) : ViewModel() {
             atualizando.value = true
             mensagem.value = when (val resultado = container.cotacaoRepository.atualizar()) {
                 is ResultadoCotacao.Sucesso -> null
-                ResultadoCotacao.SemChave -> "Configure metals.api.key em local.properties."
                 is ResultadoCotacao.Falha -> resultado.mensagem
             }
             atualizando.value = false

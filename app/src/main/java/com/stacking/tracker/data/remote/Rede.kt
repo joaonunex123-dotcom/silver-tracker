@@ -32,7 +32,7 @@ object Rede {
             }
             .build()
 
-    fun criarApi(baseUrl: String = BuildConfig.METALS_BASE_URL): MetaisApi =
+    fun criarApi(baseUrl: String = BuildConfig.COTACAO_BASE_URL): MetaisApi =
         Retrofit.Builder()
             .baseUrl(if (baseUrl.endsWith("/")) baseUrl else "$baseUrl/")
             .client(cliente())

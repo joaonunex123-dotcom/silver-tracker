@@ -96,7 +96,6 @@ fun CotacaoScreen(
                 SpotAtual(
                     cotacao = estado.atual,
                     atualizando = estado.atualizando,
-                    apiConfigurada = estado.apiConfigurada,
                     onAtualizar = viewModel::atualizar,
                     onManual = { mostrarManual = true },
                 )
@@ -148,7 +147,6 @@ fun CotacaoScreen(
 private fun SpotAtual(
     cotacao: Cotacao?,
     atualizando: Boolean,
-    apiConfigurada: Boolean,
     onAtualizar: () -> Unit,
     onManual: () -> Unit,
 ) {
@@ -174,16 +172,6 @@ private fun SpotAtual(
                     Separador()
                     LinhaDado("Origem", cotacao.origem.rotulo)
                 }
-            }
-
-            if (!apiConfigurada) {
-                Text(
-                    text = "Sem chave de API configurada. Preencha metals.api.key em local.properties " +
-                        "ou lance a cotacao manualmente.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 8.dp),
-                )
             }
 
             Row(

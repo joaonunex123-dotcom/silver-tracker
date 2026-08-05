@@ -9,14 +9,12 @@ import java.io.IOException
 
 sealed interface ResultadoCotacao {
     data class Sucesso(val cotacao: Cotacao) : ResultadoCotacao
-    data object SemChave : ResultadoCotacao
     data class Falha(val mensagem: String) : ResultadoCotacao
 }
 
 class CotacaoRepository(
     private val dao: CotacaoDao,
     private val api: MetaisApi,
-    private val chaveApi: String,
 ) {
 
     fun observarUltima(): Flow<Cotacao?> = dao.observarUltima()
@@ -32,25 +30,24 @@ class CotacaoRepository(
      * o valor de mercado usa a ultima cotacao salva no banco.
      */
     suspend fun atualizar(): ResultadoCotacao {
-        if (chaveApi.isBlank()) return ResultadoCotacao.SemChave
-
         return try {
-            val resposta = api.ultimaCotacao(chave = chaveApi)
-            val usd = resposta.prataUsdPorOz
-            val cambio = resposta.usdParaBrl
+            val resposta = api.ultimaCotacao()
+            val ozBrl = resposta.prata?.valor
+            val usdBrl = resposta.dolar?.valor
 
             when {
-                usd == null || usd <= 0.0 ->
+                ozBrl == null || ozBrl <= 0.0 ->
                     ResultadoCotacao.Falha("A API nao retornou o preco da prata.")
 
-                cambio == null || cambio <= 0.0 ->
+                usdBrl == null || usdBrl <= 0.0 ->
                     ResultadoCotacao.Falha("A API nao retornou a cotacao do dolar.")
 
                 else -> {
                     val cotacao = Cotacao(
-                        data = System.currentTimeMillis(),
-                        precoOzUsd = usd,
-                        precoOzBrl = usd * cambio,
+                        // Horario do mercado, quando vem; o do aparelho e so reserva.
+                        data = resposta.prata.instante ?: System.currentTimeMillis(),
+                        precoOzUsd = ozBrl / usdBrl,
+                        precoOzBrl = ozBrl,
                         origem = OrigemCotacao.API,
                     )
                     val id = dao.inserir(cotacao)
@@ -64,7 +61,7 @@ class CotacaoRepository(
         }
     }
 
-    /** Entrada manual, para quem nao configurou chave de API ou quer corrigir o spot. */
+    /** Entrada manual, para corrigir o spot ou lancar a cotacao de uma compra antiga. */
     suspend fun registrarManual(precoOzUsd: Double, usdBrl: Double): Cotacao {
         val cotacao = Cotacao(
             data = System.currentTimeMillis(),
