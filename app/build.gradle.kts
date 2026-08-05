@@ -30,8 +30,8 @@ android {
         applicationId = "com.stacking.tracker"
         minSdk = 26
         targetSdk = 36
-        versionCode = 3
-        versionName = "1.1.1"
+        versionCode = 4
+        versionName = "1.1.2"
 
         // A AwesomeAPI nao pede chave, entao nao ha segredo a embutir no APK.
         // A URL segue configuravel para apontar a um proxy ou a um mock.
@@ -42,9 +42,24 @@ android {
         )
     }
 
+    // Keystore fixa e versionada. Sem isto, o Gradle gera uma chave de debug nova
+    // a cada build; como os runners do CI sao descartaveis, cada release saia com
+    // assinatura diferente e o Android recusava atualizar por cima ("app nao
+    // instalado"). Nao e segredo: sao exatamente os parametros publicos da debug
+    // keystore padrao do Android Studio. NUNCA usar para publicar na Play Store.
+    signingConfigs {
+        getByName("debug") {
+            storeFile = rootProject.file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
         debug {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("debug")
         }
         release {
             isMinifyEnabled = true
