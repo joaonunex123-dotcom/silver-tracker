@@ -6,8 +6,24 @@ import com.stacking.tracker.data.local.TipoPeca
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import java.time.LocalDate
+import java.time.ZoneId
 
 class CalculosTest {
+
+    // Zona fixa: os testes nao podem depender do fuso da maquina que roda a suite.
+    private val ZONA: ZoneId = ZoneId.of("America/Sao_Paulo")
+
+    /** Compra do dia, como o app grava: meia-noite local. */
+    private fun compraEm(dia: LocalDate): Long =
+        dia.atStartOfDay(ZONA).toInstant().toEpochMilli()
+
+    private fun cotacaoEm(dia: LocalDate, hora: Int, brl: Double) = Cotacao(
+        id = dia.toEpochDay(),
+        data = dia.atTime(hora, 0).atZone(ZONA).toInstant().toEpochMilli(),
+        precoOzUsd = brl / 5.5,
+        precoOzBrl = brl,
+    )
 
     private fun peca(
         gramas: Double = 31.1035,
@@ -58,18 +74,50 @@ class CalculosTest {
 
     @Test
     fun `resolvedor usa a cotacao mais recente ate a data`() {
-        val historico = listOf(
-            Cotacao(id = 3, data = 300, precoOzUsd = 30.0, precoOzBrl = 165.0),
-            Cotacao(id = 2, data = 200, precoOzUsd = 28.0, precoOzBrl = 154.0),
-            Cotacao(id = 1, data = 100, precoOzUsd = 25.0, precoOzBrl = 137.5),
+        val resolvedor = ResolvedorSpot(
+            listOf(
+                cotacaoEm(LocalDate.of(2026, 8, 5), 10, 165.0),
+                cotacaoEm(LocalDate.of(2026, 8, 3), 10, 154.0),
+                cotacaoEm(LocalDate.of(2026, 8, 1), 10, 137.5),
+            ),
+            ZONA,
         )
-        val resolvedor = ResolvedorSpot(historico)
 
-        assertEquals(154.0, resolvedor.precoOzBrlEm(250), 1e-9)
-        assertEquals(165.0, resolvedor.precoOzBrlEm(999), 1e-9)
+        assertEquals(154.0, resolvedor.precoOzBrlEm(compraEm(LocalDate.of(2026, 8, 4))), 1e-9)
+        assertEquals(165.0, resolvedor.precoOzBrlEm(compraEm(LocalDate.of(2026, 8, 20))), 1e-9)
         // Compra anterior a todo o historico cai na cotacao mais antiga.
-        assertEquals(137.5, resolvedor.precoOzBrlEm(50), 1e-9)
-        assertEquals(0.0, ResolvedorSpot.VAZIO.precoOzBrlEm(250), 1e-9)
+        assertEquals(137.5, resolvedor.precoOzBrlEm(compraEm(LocalDate.of(2026, 7, 20))), 1e-9)
+        assertEquals(0.0, ResolvedorSpot.VAZIO.precoOzBrlEm(compraEm(LocalDate.of(2026, 8, 4))), 1e-9)
+    }
+
+    @Test
+    fun `cotacao lancada mais tarde no mesmo dia vale para a compra do dia`() {
+        // A compra e gravada como meia-noite local; a cotacao, as 14h.
+        // Comparar pelo instante faria a peca herdar o spot da semana passada.
+        val dia = LocalDate.of(2026, 8, 5)
+        val resolvedor = ResolvedorSpot(
+            listOf(
+                cotacaoEm(dia, 14, 165.0),
+                cotacaoEm(dia.minusDays(7), 10, 130.0),
+            ),
+            ZONA,
+        )
+
+        assertEquals(165.0, resolvedor.precoOzBrlEm(compraEm(dia)), 1e-9)
+    }
+
+    @Test
+    fun `cotacao do dia seguinte nao vale para a compra de hoje`() {
+        val dia = LocalDate.of(2026, 8, 5)
+        val resolvedor = ResolvedorSpot(
+            listOf(
+                cotacaoEm(dia.plusDays(1), 9, 190.0),
+                cotacaoEm(dia, 14, 165.0),
+            ),
+            ZONA,
+        )
+
+        assertEquals(165.0, resolvedor.precoOzBrlEm(compraEm(dia)), 1e-9)
     }
 
     @Test

@@ -2,6 +2,7 @@ package com.stacking.tracker.core
 
 import com.stacking.tracker.data.local.Cotacao
 import com.stacking.tracker.data.local.Peca
+import java.time.ZoneId
 
 /** Gramas em uma onca troy. */
 const val GRAMAS_POR_OZ_TROY = 31.1035
@@ -47,11 +48,19 @@ fun calcularPremioPercent(precoPago: Double, valorSpotNaCompra: Double): Double?
  *
  * Espera [historicoDesc] ordenado da mais recente para a mais antiga.
  */
-class ResolvedorSpot(private val historicoDesc: List<Cotacao>) {
+class ResolvedorSpot(
+    private val historicoDesc: List<Cotacao>,
+    private val zona: ZoneId = ZoneId.systemDefault(),
+) {
 
     fun em(data: Long): Cotacao? {
         if (historicoDesc.isEmpty()) return null
-        return historicoDesc.firstOrNull { it.data <= data } ?: historicoDesc.last()
+        // Compara contra o FIM do dia da compra, nao contra o instante dela.
+        // A compra e gravada como meia-noite local; uma cotacao lancada as 14h do
+        // mesmo dia seria descartada por "ser posterior", e a peca acabaria
+        // avaliada pelo spot de dias atras.
+        val limiteDoDia = fimDoDia(data, zona)
+        return historicoDesc.firstOrNull { it.data <= limiteDoDia } ?: historicoDesc.last()
     }
 
     fun precoOzBrlEm(data: Long): Double = em(data)?.precoOzBrl ?: 0.0

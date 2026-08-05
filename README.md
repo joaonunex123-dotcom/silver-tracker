@@ -70,12 +70,18 @@ lucroTotal     = valorMercadoTotal - totalInvestido
 ```
 
 Sobre o **prêmio**: a entity `Peca` não guarda o spot do dia da compra, então o spot de referência
-vem do histórico de cotações — a cotação mais recente que não seja posterior à data da compra. Se a
-compra for anterior a todo o histórico, usa a cotação mais antiga disponível. Sem nenhuma cotação
-registrada, o prêmio aparece como `--` em vez de um número inventado.
+vem do histórico de cotações — a cotação mais recente que não seja posterior ao **fim do dia** da
+compra. Se a compra for anterior a todo o histórico, usa a cotação mais antiga disponível. Sem
+nenhuma cotação registrada, o prêmio aparece como `--` em vez de um número inventado.
 
-Consequência prática: registre a cotação **antes** de cadastrar as compras do dia, ou lance uma
-cotação manual com o spot da época.
+A comparação é por dia, não por instante: uma peça comprada hoje e uma cotação lançada hoje às 14h
+se encontram, mesmo a compra sendo gravada como meia-noite. Para compras antigas, lance uma cotação
+manual com o spot da época.
+
+Datas de compra são gravadas como meia-noite no **fuso local**. O DatePicker do Material 3 trabalha
+em UTC, então as conversões nos dois sentidos ficam em
+[Datas.kt](app/src/main/java/com/stacking/tracker/core/Datas.kt) — sem elas a data escolhida volta um
+dia para quem está a oeste de Greenwich.
 
 Os cálculos estão isolados em [Calculos.kt](app/src/main/java/com/stacking/tracker/core/Calculos.kt)
 e cobertos por testes JVM em

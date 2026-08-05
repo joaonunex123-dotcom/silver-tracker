@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
+import com.stacking.tracker.core.dataParaSeletor
 import com.stacking.tracker.core.formatarBrl
 import com.stacking.tracker.core.formatarData
 import com.stacking.tracker.core.formatarOz
@@ -213,7 +214,10 @@ fun EditorScreen(
     }
 
     if (mostrarSeletorData) {
-        val estadoData = rememberDatePickerState(initialSelectedDateMillis = estado.form.dataCompra)
+        // O DatePicker fala UTC; a data guardada e meia-noite local.
+        val estadoData = rememberDatePickerState(
+            initialSelectedDateMillis = dataParaSeletor(estado.form.dataCompra),
+        )
         DatePickerDialog(
             onDismissRequest = { mostrarSeletorData = false },
             confirmButton = {

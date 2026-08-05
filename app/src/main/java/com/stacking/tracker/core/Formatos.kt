@@ -2,7 +2,6 @@ package com.stacking.tracker.core
 
 import java.text.NumberFormat
 import java.time.Instant
-import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -52,9 +51,6 @@ fun formatarData(epochMillis: Long): String =
 
 fun formatarDataHora(epochMillis: Long): String =
     Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()).format(DATA_HORA)
-
-fun hojeEmMillis(): Long =
-    LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
 /**
  * Le numero digitado pelo usuario aceitando virgula ou ponto como separador decimal.

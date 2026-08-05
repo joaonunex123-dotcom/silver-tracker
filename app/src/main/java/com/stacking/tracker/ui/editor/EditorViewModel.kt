@@ -8,6 +8,7 @@ import com.stacking.tracker.ContainerApp
 import com.stacking.tracker.core.GRAMAS_POR_OZ_TROY
 import com.stacking.tracker.core.ResolvedorSpot
 import com.stacking.tracker.core.calcularPremioPercent
+import com.stacking.tracker.core.dataDoSeletor
 import com.stacking.tracker.core.hojeEmMillis
 import com.stacking.tracker.core.paraCampo
 import com.stacking.tracker.core.paraDoubleOuNulo
@@ -139,7 +140,8 @@ class EditorViewModel(
     fun definirPeso(valor: String) = atualizar { it.copy(peso = valor) }
     fun definirPureza(valor: String) = atualizar { it.copy(pureza = valor) }
     fun definirPreco(valor: String) = atualizar { it.copy(preco = valor) }
-    fun definirData(valor: Long) = atualizar { it.copy(dataCompra = valor) }
+    /** [utcMillis] vem do DatePicker, que trabalha em UTC. */
+    fun definirData(utcMillis: Long) = atualizar { it.copy(dataCompra = dataDoSeletor(utcMillis)) }
     fun definirVendedor(valor: String) = atualizar { it.copy(vendedor = valor) }
     fun definirObservacoes(valor: String) = atualizar { it.copy(observacoes = valor) }
 
