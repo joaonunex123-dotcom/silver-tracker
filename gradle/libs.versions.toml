@@ -1,7 +1,10 @@
 [versions]
-agp = "8.13.2"
-kotlin = "2.3.21"
-ksp = "2.3.11"
+# O AGP 9 embute o Kotlin e traz o KGP 2.2.10 como dependencia de runtime.
+# Os plugins de Compose e serializacao acompanham essa versao; desalinhar exigiria
+# sobrescrever o classpath no buildscript, complexidade que o projeto nao precisa.
+agp = "9.3.1"
+kotlin = "2.2.10"
+ksp = "2.2.10-2.0.2"
 coreKtx = "1.19.0"
 lifecycle = "2.11.0"
 activityCompose = "1.13.0"
@@ -45,7 +48,8 @@ junit = { group = "junit", name = "junit", version.ref = "junit" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+# Sem kotlin-android de proposito: o AGP 9 recusa esse plugin, ja que passou a
+# compilar Kotlin por conta propria.
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

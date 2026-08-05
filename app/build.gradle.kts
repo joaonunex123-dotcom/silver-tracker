@@ -1,9 +1,7 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
@@ -75,11 +73,8 @@ android {
     }
 }
 
-kotlin {
-    compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_17)
-    }
-}
+// Sem bloco kotlin { compilerOptions { jvmTarget } }: com o Kotlin embutido do
+// AGP 9 o alvo da JVM vem de compileOptions acima.
 
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
