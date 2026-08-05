@@ -50,9 +50,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stacking.tracker.core.PecaCalculada
 import com.stacking.tracker.core.formatarBrl
 import com.stacking.tracker.core.formatarData
-import com.stacking.tracker.core.formatarGramas
-import com.stacking.tracker.core.formatarOz
 import com.stacking.tracker.core.formatarPercentAssinado
+import com.stacking.tracker.core.formatarQuantidade
 import com.stacking.tracker.data.local.TipoPeca
 import com.stacking.tracker.ui.FabricaViewModel
 import com.stacking.tracker.ui.componentes.EstadoVazio
@@ -62,6 +61,7 @@ import com.stacking.tracker.ui.componentes.Rotulo
 import com.stacking.tracker.ui.theme.EstiloNumeroMedio
 import com.stacking.tracker.ui.theme.EstiloNumeroPequeno
 import com.stacking.tracker.ui.theme.LocalCoresValor
+import com.stacking.tracker.ui.theme.LocalUnidadePeso
 import com.stacking.tracker.ui.theme.para
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -226,6 +226,7 @@ private fun BarraResumoEOrdem(
     modifier: Modifier = Modifier,
 ) {
     var menuAberto by remember { mutableStateOf(false) }
+    val unidade = LocalUnidadePeso.current
     val quantidade = estado.pecas.size
     val total = estado.totalNoBanco
 
@@ -239,9 +240,9 @@ private fun BarraResumoEOrdem(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = if (quantidade == total) {
-                    "$quantidade pecas  ${formatarOz(estado.ozFiltradas)} finas"
+                    "$quantidade pecas  ${formatarQuantidade(estado.ozFiltradas, unidade)} de prata pura"
                 } else {
-                    "$quantidade de $total pecas  ${formatarOz(estado.ozFiltradas)} finas"
+                    "$quantidade de $total  ${formatarQuantidade(estado.ozFiltradas, unidade)} de prata pura"
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -292,6 +293,7 @@ private fun CartaoPeca(
     onClick: () -> Unit,
 ) {
     val cores = LocalCoresValor.current
+    val unidade = LocalUnidadePeso.current
     val peca = item.peca
 
     Painel(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)) { interno ->
@@ -313,7 +315,7 @@ private fun CartaoPeca(
                 Text(
                     text = listOfNotNull(
                         peca.marca.ifBlank { null },
-                        formatarGramas(peca.pesoGramas),
+                        formatarQuantidade(item.pesoTroyOz, unidade),
                         formatarData(peca.dataCompra),
                     ).joinToString("  "),
                     style = MaterialTheme.typography.bodySmall,
@@ -341,7 +343,7 @@ private fun CartaoPeca(
                     Rotulo("pago")
                 }
                 Text(
-                    text = formatarOz(item.ozFinas),
+                    text = formatarQuantidade(item.ozFinas, unidade),
                     style = EstiloNumeroPequeno,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

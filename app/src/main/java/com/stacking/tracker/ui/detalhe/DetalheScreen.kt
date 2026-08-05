@@ -45,11 +45,13 @@ import com.stacking.tracker.core.formatarBrl
 import com.stacking.tracker.core.formatarBrlAssinado
 import com.stacking.tracker.core.formatarData
 import com.stacking.tracker.core.formatarDataHora
-import com.stacking.tracker.core.formatarGramas
-import com.stacking.tracker.core.formatarOz
 import com.stacking.tracker.core.formatarPercentAssinado
+import com.stacking.tracker.core.formatarPrecoUnitario
 import com.stacking.tracker.core.formatarPureza
+import com.stacking.tracker.core.formatarQuantidade
 import com.stacking.tracker.core.formatarUsd
+import com.stacking.tracker.core.precoPorUnidade
+import com.stacking.tracker.core.rotuloPreco
 import com.stacking.tracker.ui.FabricaViewModel
 import com.stacking.tracker.ui.componentes.EstadoVazio
 import com.stacking.tracker.ui.componentes.Etiqueta
@@ -59,6 +61,7 @@ import com.stacking.tracker.ui.componentes.Rotulo
 import com.stacking.tracker.ui.componentes.Separador
 import com.stacking.tracker.ui.theme.EstiloNumeroHero
 import com.stacking.tracker.ui.theme.LocalCoresValor
+import com.stacking.tracker.ui.theme.LocalUnidadePeso
 import com.stacking.tracker.ui.theme.para
 import java.io.File
 
@@ -226,6 +229,7 @@ private fun BlocoValor(calculada: PecaCalculada) {
 @Composable
 private fun BlocoFicha(calculada: PecaCalculada) {
     val peca = calculada.peca
+    val unidade = LocalUnidadePeso.current
 
     Painel(modifier = Modifier.fillMaxWidth()) { interno ->
         Column(modifier = interno.fillMaxWidth()) {
@@ -238,13 +242,11 @@ private fun BlocoFicha(calculada: PecaCalculada) {
             }
             LinhaDado("Marca", peca.marca.ifBlank { "--" })
             Separador()
-            LinhaDado("Peso bruto", formatarGramas(peca.pesoGramas))
-            Separador()
-            LinhaDado("Oncas troy", formatarOz(calculada.pesoTroyOz))
+            LinhaDado("Peso bruto", formatarQuantidade(calculada.pesoTroyOz, unidade))
             Separador()
             LinhaDado("Pureza", formatarPureza(peca.pureza))
             Separador()
-            LinhaDado("Oncas finas (ASW)", formatarOz(calculada.ozFinas))
+            LinhaDado("Prata pura", formatarQuantidade(calculada.ozFinas, unidade))
             Separador()
             LinhaDado("Preco pago", formatarBrl(peca.precoPago))
             Separador()
@@ -258,6 +260,7 @@ private fun BlocoFicha(calculada: PecaCalculada) {
 @Composable
 private fun BlocoPremio(calculada: PecaCalculada, estado: EstadoDetalhe) {
     val cores = LocalCoresValor.current
+    val unidade = LocalUnidadePeso.current
 
     Painel(modifier = Modifier.fillMaxWidth()) { interno ->
         Column(modifier = interno.fillMaxWidth()) {
@@ -272,7 +275,10 @@ private fun BlocoPremio(calculada: PecaCalculada, estado: EstadoDetalhe) {
                 )
             } else {
                 estado.cotacaoNaCompra?.let {
-                    LinhaDado("Spot de referencia", "${formatarBrl(it.precoOzBrl)} / oz")
+                    LinhaDado(
+                        rotulo = "Spot de referencia",
+                        valor = "${formatarPrecoUnitario(it.precoOzBrl, unidade)} / ${unidade.sufixo}",
+                    )
                     Separador()
                     LinhaDado("Data da referencia", formatarDataHora(it.data))
                     Separador()
@@ -293,9 +299,15 @@ private fun BlocoPremio(calculada: PecaCalculada, estado: EstadoDetalhe) {
 
             estado.cotacaoAtual?.let {
                 Separador()
-                LinhaDado("Spot atual", "${formatarBrl(it.precoOzBrl)} / oz")
+                LinhaDado(
+                    rotulo = rotuloPreco("Spot BRL", unidade),
+                    valor = formatarPrecoUnitario(it.precoOzBrl, unidade),
+                )
                 Separador()
-                LinhaDado("Spot atual (USD)", "${formatarUsd(it.precoOzUsd)} / oz")
+                LinhaDado(
+                    rotulo = rotuloPreco("Spot USD", unidade),
+                    valor = formatarUsd(precoPorUnidade(it.precoOzUsd, unidade)),
+                )
             }
         }
     }

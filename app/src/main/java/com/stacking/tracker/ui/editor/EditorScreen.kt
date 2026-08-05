@@ -56,8 +56,9 @@ import coil.compose.rememberAsyncImagePainter
 import com.stacking.tracker.core.dataParaSeletor
 import com.stacking.tracker.core.formatarBrl
 import com.stacking.tracker.core.formatarData
-import com.stacking.tracker.core.formatarOz
 import com.stacking.tracker.core.formatarPercentAssinado
+import com.stacking.tracker.core.formatarPrecoUnitario
+import com.stacking.tracker.core.formatarQuantidade
 import com.stacking.tracker.data.local.TipoPeca
 import com.stacking.tracker.ui.FabricaViewModel
 import com.stacking.tracker.ui.componentes.CampoTexto
@@ -66,6 +67,7 @@ import com.stacking.tracker.ui.componentes.Painel
 import com.stacking.tracker.ui.componentes.Rotulo
 import com.stacking.tracker.ui.componentes.Separador
 import com.stacking.tracker.ui.theme.LocalCoresValor
+import com.stacking.tracker.ui.theme.LocalUnidadePeso
 import com.stacking.tracker.ui.theme.para
 import java.io.File
 
@@ -289,17 +291,21 @@ private fun CampoData(data: Long, onAbrir: () -> Unit) {
 @Composable
 private fun Derivados(estado: EstadoEditor) {
     val cores = LocalCoresValor.current
+    val unidade = LocalUnidadePeso.current
 
     Painel(modifier = Modifier.fillMaxWidth()) { interno ->
         Column(modifier = interno.fillMaxWidth()) {
             Rotulo("Calculado")
-            LinhaDado("Oncas troy (bruto)", formatarOz(estado.ozTroy))
+            LinhaDado("Peso bruto", formatarQuantidade(estado.ozTroy, unidade))
             Separador()
-            LinhaDado("Oncas finas (ASW)", formatarOz(estado.ozFinas))
+            LinhaDado("Prata pura", formatarQuantidade(estado.ozFinas, unidade))
             Separador()
 
             if (estado.precoOzBrlNaData > 0.0) {
-                LinhaDado("Spot na data", "${formatarBrl(estado.precoOzBrlNaData)} / oz")
+                LinhaDado(
+                    rotulo = "Spot na data",
+                    valor = "${formatarPrecoUnitario(estado.precoOzBrlNaData, unidade)} / ${unidade.sufixo}",
+                )
                 Separador()
                 LinhaDado("Valor do metal", formatarBrl(estado.valorSpotNaData))
                 Separador()

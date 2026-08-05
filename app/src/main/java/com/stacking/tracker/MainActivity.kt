@@ -7,7 +7,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.stacking.tracker.ui.navegacao.AppNavegacao
-import com.stacking.tracker.ui.theme.ModoTema
 import com.stacking.tracker.ui.theme.StackingTheme
 
 class MainActivity : ComponentActivity() {
@@ -20,20 +19,16 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val modo by preferencias.modoTema.collectAsStateWithLifecycle()
+            val unidade by preferencias.unidade.collectAsStateWithLifecycle()
 
-            StackingTheme(modo = modo) {
+            StackingTheme(modo = modo, unidade = unidade) {
                 AppNavegacao(
                     modoTema = modo,
-                    onAlternarTema = { preferencias.definirModoTema(proximoModo(modo)) },
+                    unidade = unidade,
+                    onModoTema = preferencias::definirModoTema,
+                    onUnidade = preferencias::definirUnidade,
                 )
             }
         }
     }
-}
-
-/** Escuro -> Claro -> Sistema -> Escuro. */
-private fun proximoModo(atual: ModoTema): ModoTema = when (atual) {
-    ModoTema.ESCURO -> ModoTema.CLARO
-    ModoTema.CLARO -> ModoTema.SISTEMA
-    ModoTema.SISTEMA -> ModoTema.ESCURO
 }

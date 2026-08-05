@@ -168,6 +168,31 @@ class CalculosTest {
     }
 
     @Test
+    fun `unidade so muda a apresentacao, nao o valor`() {
+        // 1 onca troy = 31,1035 g. O mesmo metal, escrito de dois jeitos.
+        assertEquals("31,1 g", formatarQuantidade(1.0, UnidadePeso.GRAMAS))
+        assertEquals("1,000 oz", formatarQuantidade(1.0, UnidadePeso.ONCAS))
+
+        // O preco por grama vezes as gramas de uma onca reconstroi o preco da onca.
+        val porGrama = precoPorUnidade(320.0, UnidadePeso.GRAMAS)
+        val porOnca = precoPorUnidade(320.0, UnidadePeso.ONCAS)
+        assertEquals(porOnca, porGrama * GRAMAS_POR_OZ_TROY, 1e-9)
+    }
+
+    @Test
+    fun `rotulo de preco acompanha a unidade`() {
+        assertEquals("BRL / g", rotuloPreco("BRL", UnidadePeso.GRAMAS))
+        assertEquals("USD / oz", rotuloPreco("USD", UnidadePeso.ONCAS))
+    }
+
+    @Test
+    fun `unidade desconhecida cai em gramas`() {
+        assertEquals(UnidadePeso.GRAMAS, UnidadePeso.de(null))
+        assertEquals(UnidadePeso.GRAMAS, UnidadePeso.de("LIBRAS"))
+        assertEquals(UnidadePeso.ONCAS, UnidadePeso.de("ONCAS"))
+    }
+
+    @Test
     fun `leitura de numero aceita virgula e ponto`() {
         assertEquals(1234.56, paraDoubleOuNulo("1.234,56")!!, 1e-9)
         assertEquals(0.999, paraDoubleOuNulo("0.999")!!, 1e-9)

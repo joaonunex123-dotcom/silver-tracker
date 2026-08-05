@@ -8,7 +8,9 @@ import androidx.compose.material3.Shapes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalView
+import com.stacking.tracker.core.UnidadePeso
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 
@@ -27,9 +29,17 @@ private val Formas = Shapes(
     extraLarge = RoundedCornerShape(12.dp),
 )
 
+/**
+ * Unidade de exibicao de peso e preco unitario. Fica num CompositionLocal porque
+ * praticamente toda tela mostra peso, e passar isso por parametro em cascata
+ * poluiria cada assinatura no caminho.
+ */
+val LocalUnidadePeso = staticCompositionLocalOf { UnidadePeso.GRAMAS }
+
 @Composable
 fun StackingTheme(
     modo: ModoTema = ModoTema.ESCURO,
+    unidade: UnidadePeso = UnidadePeso.GRAMAS,
     conteudo: @Composable () -> Unit,
 ) {
     val escuro = when (modo) {
@@ -52,7 +62,10 @@ fun StackingTheme(
         }
     }
 
-    CompositionLocalProvider(LocalCoresValor provides coresValor) {
+    CompositionLocalProvider(
+        LocalCoresValor provides coresValor,
+        LocalUnidadePeso provides unidade,
+    ) {
         MaterialTheme(
             colorScheme = esquema,
             typography = Tipografia,

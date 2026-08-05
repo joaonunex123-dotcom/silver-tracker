@@ -42,8 +42,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stacking.tracker.core.formatarBrl
 import com.stacking.tracker.core.formatarDataHora
 import com.stacking.tracker.core.formatarNumero
+import com.stacking.tracker.core.formatarPrecoUnitario
 import com.stacking.tracker.core.formatarUsd
 import com.stacking.tracker.core.paraDoubleOuNulo
+import com.stacking.tracker.core.precoPorUnidade
+import com.stacking.tracker.core.rotuloPreco
 import com.stacking.tracker.data.local.Cotacao
 import com.stacking.tracker.ui.FabricaViewModel
 import com.stacking.tracker.ui.componentes.CampoTexto
@@ -55,6 +58,7 @@ import com.stacking.tracker.ui.componentes.Rotulo
 import com.stacking.tracker.ui.componentes.Separador
 import com.stacking.tracker.ui.theme.EstiloNumeroHero
 import com.stacking.tracker.ui.theme.EstiloNumeroPequeno
+import com.stacking.tracker.ui.theme.LocalUnidadePeso
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -152,21 +156,25 @@ private fun SpotAtual(
     onAtualizar: () -> Unit,
     onManual: () -> Unit,
 ) {
+    val unidade = LocalUnidadePeso.current
     Painel(modifier = Modifier.fillMaxWidth()) { interno ->
         Column(
             modifier = interno.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            Rotulo("Prata spot  BRL / oz troy")
+            Rotulo("Prata spot  ${rotuloPreco("BRL", unidade)}")
             Text(
-                text = cotacao?.let { formatarBrl(it.precoOzBrl) } ?: "--",
+                text = cotacao?.let { formatarPrecoUnitario(it.precoOzBrl, unidade) } ?: "--",
                 style = EstiloNumeroHero,
                 color = MaterialTheme.colorScheme.onSurface,
             )
 
             if (cotacao != null) {
                 Column(modifier = Modifier.padding(top = 4.dp)) {
-                    LinhaDado("USD / oz", formatarUsd(cotacao.precoOzUsd))
+                    LinhaDado(
+                        rotulo = rotuloPreco("USD", unidade),
+                        valor = formatarUsd(precoPorUnidade(cotacao.precoOzUsd, unidade)),
+                    )
                     Separador()
                     LinhaDado("USD / BRL", formatarNumero(cotacao.usdBrl, casas = 4))
                     Separador()
@@ -205,6 +213,7 @@ private fun SpotAtual(
 
 @Composable
 private fun LinhaHistorico(cotacao: Cotacao, onExcluir: () -> Unit) {
+    val unidade = LocalUnidadePeso.current
     Painel(modifier = Modifier.fillMaxWidth()) { interno ->
         Row(
             modifier = interno.fillMaxWidth(),
@@ -221,12 +230,12 @@ private fun LinhaHistorico(cotacao: Cotacao, onExcluir: () -> Unit) {
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = formatarBrl(cotacao.precoOzBrl),
+                    text = formatarPrecoUnitario(cotacao.precoOzBrl, unidade),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    text = formatarUsd(cotacao.precoOzUsd),
+                    text = formatarUsd(precoPorUnidade(cotacao.precoOzUsd, unidade)),
                     style = EstiloNumeroPequeno,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

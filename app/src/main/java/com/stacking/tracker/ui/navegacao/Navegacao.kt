@@ -37,6 +37,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.stacking.tracker.core.UnidadePeso
+import com.stacking.tracker.ui.ajustes.AjustesScreen
 import com.stacking.tracker.ui.cotacao.CotacaoScreen
 import com.stacking.tracker.ui.dashboard.DashboardScreen
 import com.stacking.tracker.ui.detalhe.DetalheScreen
@@ -51,6 +53,7 @@ object Rotas {
     const val COTACAO = "cotacao"
     const val DETALHE = "peca/{pecaId}"
     const val EDITOR = "editor?pecaId={pecaId}"
+    const val AJUSTES = "ajustes"
 
     fun detalhe(id: Long) = "peca/$id"
     fun editor(id: Long = 0L) = "editor?pecaId=$id"
@@ -88,7 +91,9 @@ private val ALTURA_ABAS = 52.dp
 @Composable
 fun AppNavegacao(
     modoTema: ModoTema,
-    onAlternarTema: () -> Unit,
+    unidade: UnidadePeso,
+    onModoTema: (ModoTema) -> Unit,
+    onUnidade: (UnidadePeso) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val navController = rememberNavController()
@@ -119,10 +124,19 @@ fun AppNavegacao(
         ) {
             composable(Rotas.DASHBOARD) {
                 DashboardScreen(
-                    modoTema = modoTema,
-                    onAlternarTema = onAlternarTema,
+                    onAbrirAjustes = { navController.navigate(Rotas.AJUSTES) },
                     onVerCotacao = { navController.irParaAba(Rotas.COTACAO) },
                     onVerInventario = { navController.irParaAba(Rotas.INVENTARIO) },
+                )
+            }
+
+            composable(Rotas.AJUSTES) {
+                AjustesScreen(
+                    modoTema = modoTema,
+                    unidade = unidade,
+                    onModoTema = onModoTema,
+                    onUnidade = onUnidade,
+                    onVoltar = { navController.popBackStack() },
                 )
             }
 

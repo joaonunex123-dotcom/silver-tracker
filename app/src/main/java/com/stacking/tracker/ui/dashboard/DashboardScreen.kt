@@ -11,10 +11,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.DarkMode
-import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.Refresh
-import androidx.compose.material.icons.outlined.SettingsBrightness
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -37,14 +35,16 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stacking.tracker.core.ResumoCarteira
+import com.stacking.tracker.core.UnidadePeso
 import com.stacking.tracker.core.formatarBrl
 import com.stacking.tracker.core.formatarBrlAssinado
 import com.stacking.tracker.core.formatarDataHora
-import com.stacking.tracker.core.formatarGramas
-import com.stacking.tracker.core.formatarOz
 import com.stacking.tracker.core.formatarPercentAssinado
+import com.stacking.tracker.core.formatarPrecoUnitario
+import com.stacking.tracker.core.formatarQuantidade
 import com.stacking.tracker.core.formatarUsd
-import com.stacking.tracker.core.precoPorGrama
+import com.stacking.tracker.core.precoPorUnidade
+import com.stacking.tracker.core.rotuloPreco
 import com.stacking.tracker.ui.FabricaViewModel
 import com.stacking.tracker.ui.componentes.MetricaCompacta
 import com.stacking.tracker.ui.componentes.Painel
@@ -52,7 +52,7 @@ import com.stacking.tracker.ui.componentes.Rotulo
 import com.stacking.tracker.ui.theme.EstiloNumeroHero
 import com.stacking.tracker.ui.theme.EstiloNumeroMedio
 import com.stacking.tracker.ui.theme.LocalCoresValor
-import com.stacking.tracker.ui.theme.ModoTema
+import com.stacking.tracker.ui.theme.LocalUnidadePeso
 import com.stacking.tracker.ui.theme.para
 
 /**
@@ -63,8 +63,7 @@ import com.stacking.tracker.ui.theme.para
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
-    modoTema: ModoTema,
-    onAlternarTema: () -> Unit,
+    onAbrirAjustes: () -> Unit,
     onVerCotacao: () -> Unit,
     onVerInventario: () -> Unit,
     modifier: Modifier = Modifier,
@@ -72,6 +71,7 @@ fun DashboardScreen(
 ) {
     val estado by viewModel.estado.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
+    val unidade = LocalUnidadePeso.current
 
     LaunchedEffect(estado.mensagem) {
         estado.mensagem?.let {
@@ -94,15 +94,8 @@ fun DashboardScreen(
                     containerColor = MaterialTheme.colorScheme.background,
                 ),
                 actions = {
-                    IconButton(onClick = onAlternarTema) {
-                        Icon(
-                            imageVector = when (modoTema) {
-                                ModoTema.ESCURO -> Icons.Outlined.DarkMode
-                                ModoTema.CLARO -> Icons.Outlined.LightMode
-                                ModoTema.SISTEMA -> Icons.Outlined.SettingsBrightness
-                            },
-                            contentDescription = "Tema: ${modoTema.rotulo}",
-                        )
+                    IconButton(onClick = onAbrirAjustes) {
+                        Icon(Icons.Outlined.Settings, contentDescription = "Ajustes")
                     }
                     IconButton(
                         onClick = viewModel::atualizarCotacao,
@@ -139,8 +132,8 @@ fun DashboardScreen(
             }
             ValorDeMercado(estado.resumo, onVerCotacao)
             LinhaInvestimento(estado.resumo)
-            LinhaEstoque(estado.resumo)
-            BlocoSpot(estado.resumo, onVerCotacao)
+            LinhaEstoque(estado.resumo, unidade)
+            BlocoSpot(estado.resumo, unidade, onVerCotacao)
         }
     }
 }
@@ -215,7 +208,7 @@ private fun LinhaInvestimento(resumo: ResumoCarteira) {
 }
 
 @Composable
-private fun LinhaEstoque(resumo: ResumoCarteira) {
+private fun LinhaEstoque(resumo: ResumoCarteira, unidade: UnidadePeso) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         MetricaCompacta(
             rotulo = "Pecas",
@@ -223,20 +216,20 @@ private fun LinhaEstoque(resumo: ResumoCarteira) {
             modifier = Modifier.weight(1f),
         )
         MetricaCompacta(
-            rotulo = "Oz finas",
-            valor = formatarOz(resumo.totalOzFinas),
-            modifier = Modifier.weight(1.3f),
+            rotulo = "Prata pura",
+            valor = formatarQuantidade(resumo.totalOzFinas, unidade),
+            modifier = Modifier.weight(1.4f),
         )
         MetricaCompacta(
-            rotulo = "Peso",
-            valor = formatarGramas(resumo.totalGramas),
-            modifier = Modifier.weight(1.3f),
+            rotulo = "Peso bruto",
+            valor = formatarQuantidade(resumo.totalOzTroy, unidade),
+            modifier = Modifier.weight(1.4f),
         )
     }
 }
 
 @Composable
-private fun BlocoSpot(resumo: ResumoCarteira, onVerCotacao: () -> Unit) {
+private fun BlocoSpot(resumo: ResumoCarteira, unidade: UnidadePeso, onVerCotacao: () -> Unit) {
     val cotacao = resumo.cotacao
 
     Painel(modifier = Modifier.fillMaxWidth(), paddingV = 12.dp) { interno ->
@@ -266,11 +259,16 @@ private fun BlocoSpot(resumo: ResumoCarteira, onVerCotacao: () -> Unit) {
             } else {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                    horizontalArrangement = Arrangement.spacedBy(24.dp),
                 ) {
-                    ValorSpot("por grama", formatarBrl(precoPorGrama(cotacao.precoOzBrl)))
-                    ValorSpot("BRL / oz", formatarBrl(cotacao.precoOzBrl))
-                    ValorSpot("USD / oz", formatarUsd(cotacao.precoOzUsd))
+                    ValorSpot(
+                        rotulo = rotuloPreco("BRL", unidade),
+                        valor = formatarPrecoUnitario(cotacao.precoOzBrl, unidade),
+                    )
+                    ValorSpot(
+                        rotulo = rotuloPreco("USD", unidade),
+                        valor = formatarUsd(precoPorUnidade(cotacao.precoOzUsd, unidade)),
+                    )
                 }
             }
         }
