@@ -9,7 +9,12 @@ Kotlin · Jetpack Compose · Material 3 · Room · MVVM (ViewModel + StateFlow) 
 
 minSdk 26 · compileSdk/targetSdk 36 · Gradle Kotlin DSL
 
-Gradle 9.6.1 · AGP 9.3.1 · Kotlin 2.3.21 · KSP 2.3.11 · Compose BOM 2026.06.01 · Room 2.8.4
+Gradle 9.5.1 · AGP 8.13.2 · Kotlin 2.3.21 · KSP 2.3.11 · Compose BOM 2026.06.01 · Room 2.8.4
+
+O par Gradle/AGP não é livre: o AGP 8.x usa uma API interna do Gradle removida na 9.6.0, e o AGP 9.x
+recusa o plugin `kotlin-android` porque passou a embutir o suporte a Kotlin. Daí Gradle 9.5.1 com
+AGP 8.13.2. Subir para o AGP 9 exige migrar para o Kotlin embutido, junto com os plugins de Compose,
+serialização e KSP.
 
 ## Como abrir
 
