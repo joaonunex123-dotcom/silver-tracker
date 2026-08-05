@@ -15,11 +15,19 @@ data class Peca(
     val tipo: TipoPeca = TipoPeca.MOEDA,
     val nome: String = "",
     val marca: String = "",
-    /** Peso bruto da peca, em gramas. */
+    /**
+     * Quantas pecas identicas esta linha representa.
+     *
+     * Peso e preco abaixo sao **por unidade**; os totais saem multiplicando por
+     * aqui. Assim vinte moedas iguais viram uma linha, e migrar do schema antigo
+     * (onde cada linha era uma peca) e so assumir quantidade 1.
+     */
+    val quantidade: Int = 1,
+    /** Peso bruto de UMA peca, em gramas. */
     val pesoGramas: Double = 0.0,
     /** Teor de prata, de 0 a 1. Ex.: 0.999 */
     val pureza: Double = 0.999,
-    /** Valor pago pela peca, em BRL. */
+    /** Valor pago por UMA peca, em BRL. */
     val precoPago: Double = 0.0,
     /** Timestamp epoch em millis (UTC). */
     val dataCompra: Long = 0L,

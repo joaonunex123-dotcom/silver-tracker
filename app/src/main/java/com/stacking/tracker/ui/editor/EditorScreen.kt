@@ -153,7 +153,7 @@ fun EditorScreen(
 
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 CampoTexto(
-                    rotulo = "Peso",
+                    rotulo = "Peso por peca",
                     valor = estado.form.peso,
                     onValor = viewModel::definirPeso,
                     sufixo = "g",
@@ -172,14 +172,26 @@ fun EditorScreen(
                 )
             }
 
-            CampoTexto(
-                rotulo = "Preco pago",
-                valor = estado.form.preco,
-                onValor = viewModel::definirPreco,
-                sufixo = "R$",
-                teclado = KeyboardType.Decimal,
-                erro = if (estado.validar) estado.erroPreco else null,
-            )
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                CampoTexto(
+                    rotulo = "Quantidade",
+                    valor = estado.form.quantidade,
+                    onValor = viewModel::definirQuantidade,
+                    teclado = KeyboardType.Number,
+                    apoio = "Pecas identicas",
+                    erro = if (estado.validar) estado.erroQuantidade else null,
+                    modifier = Modifier.weight(1f),
+                )
+                CampoTexto(
+                    rotulo = "Preco por peca",
+                    valor = estado.form.preco,
+                    onValor = viewModel::definirPreco,
+                    sufixo = "R$",
+                    teclado = KeyboardType.Decimal,
+                    erro = if (estado.validar) estado.erroPreco else null,
+                    modifier = Modifier.weight(1.4f),
+                )
+            }
 
             CampoData(
                 data = estado.form.dataCompra,
@@ -296,9 +308,20 @@ private fun Derivados(estado: EstadoEditor) {
     Painel(modifier = Modifier.fillMaxWidth()) { interno ->
         Column(modifier = interno.fillMaxWidth()) {
             Rotulo("Calculado")
-            LinhaDado("Peso bruto", formatarQuantidade(estado.ozTroy, unidade))
+            val lote = (estado.quantidade ?: 1) > 1
+            if (lote) {
+                LinhaDado("Total pago", formatarBrl(estado.precoPagoTotal))
+                Separador()
+            }
+            LinhaDado(
+                rotulo = if (lote) "Peso bruto do lote" else "Peso bruto",
+                valor = formatarQuantidade(estado.ozTroy, unidade),
+            )
             Separador()
-            LinhaDado("Prata pura", formatarQuantidade(estado.ozFinas, unidade))
+            LinhaDado(
+                rotulo = if (lote) "Prata pura do lote" else "Prata pura",
+                valor = formatarQuantidade(estado.ozFinas, unidade),
+            )
             Separador()
 
             if (estado.precoOzBrlNaData > 0.0) {

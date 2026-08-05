@@ -240,15 +240,36 @@ private fun BlocoFicha(calculada: PecaCalculada) {
                 Rotulo("Ficha")
                 Etiqueta(peca.tipo.rotulo)
             }
+            val lote = calculada.quantidade > 1
+
             LinhaDado("Marca", peca.marca.ifBlank { "--" })
             Separador()
-            LinhaDado("Peso bruto", formatarQuantidade(calculada.pesoTroyOz, unidade))
+            if (lote) {
+                LinhaDado("Quantidade", "${calculada.quantidade} pecas")
+                Separador()
+                LinhaDado("Peso por peca", formatarQuantidade(calculada.pesoTroyOzUnidade, unidade))
+                Separador()
+            }
+            LinhaDado(
+                rotulo = if (lote) "Peso bruto do lote" else "Peso bruto",
+                valor = formatarQuantidade(calculada.pesoTroyOz, unidade),
+            )
             Separador()
             LinhaDado("Pureza", formatarPureza(peca.pureza))
             Separador()
-            LinhaDado("Prata pura", formatarQuantidade(calculada.ozFinas, unidade))
+            LinhaDado(
+                rotulo = if (lote) "Prata pura do lote" else "Prata pura",
+                valor = formatarQuantidade(calculada.ozFinas, unidade),
+            )
             Separador()
-            LinhaDado("Preco pago", formatarBrl(peca.precoPago))
+            if (lote) {
+                LinhaDado("Preco por peca", formatarBrl(peca.precoPago))
+                Separador()
+            }
+            LinhaDado(
+                rotulo = if (lote) "Total pago" else "Preco pago",
+                valor = formatarBrl(calculada.precoPagoTotal),
+            )
             Separador()
             LinhaDado("Data da compra", formatarData(peca.dataCompra))
             Separador()

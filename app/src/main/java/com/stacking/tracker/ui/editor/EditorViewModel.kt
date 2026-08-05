@@ -30,6 +30,7 @@ data class FormPeca(
     val tipo: TipoPeca = TipoPeca.MOEDA,
     val nome: String = "",
     val marca: String = "",
+    val quantidade: String = "1",
     val peso: String = "",
     val pureza: String = "0,999",
     val preco: String = "",
@@ -52,14 +53,24 @@ data class EstadoEditor(
 ) {
     val pesoGramas: Double? = paraDoubleOuNulo(form.peso)
     val pureza: Double? = paraDoubleOuNulo(form.pureza)
+    /** Preco de UMA peca. */
     val precoPago: Double? = paraDoubleOuNulo(form.preco)
+    val quantidade: Int? = form.quantidade.trim().toIntOrNull()
 
-    val ozTroy: Double = (pesoGramas ?: 0.0) / GRAMAS_POR_OZ_TROY
-    val ozFinas: Double = ozTroy * (pureza ?: 0.0)
+    private val qtd: Int = (quantidade ?: 1).coerceAtLeast(1)
+
+    val ozTroyUnidade: Double = (pesoGramas ?: 0.0) / GRAMAS_POR_OZ_TROY
+    val ozFinasUnidade: Double = ozTroyUnidade * (pureza ?: 0.0)
+
+    /** Totais da linha, que e o que vale para carteira e premio. */
+    val ozTroy: Double = ozTroyUnidade * qtd
+    val ozFinas: Double = ozFinasUnidade * qtd
+    val precoPagoTotal: Double = (precoPago ?: 0.0) * qtd
+
     val valorSpotNaData: Double = ozFinas * precoOzBrlNaData
-    val premioPercent: Double? = calcularPremioPercent(precoPago ?: 0.0, valorSpotNaData)
+    val premioPercent: Double? = calcularPremioPercent(precoPagoTotal, valorSpotNaData)
     val premioReais: Double? =
-        if (valorSpotNaData > 0.0) (precoPago ?: 0.0) - valorSpotNaData else null
+        if (valorSpotNaData > 0.0) precoPagoTotal - valorSpotNaData else null
 
     val erroNome: String? = "Informe o nome".takeIf { form.nome.isBlank() }
     val erroPeso: String? = "Peso deve ser maior que zero".takeIf { (pesoGramas ?: 0.0) <= 0.0 }
@@ -68,9 +79,11 @@ data class EstadoEditor(
         p == null || p <= 0.0 || p > 1.0
     }
     val erroPreco: String? = "Informe o preco pago".takeIf { precoPago == null || precoPago < 0.0 }
+    val erroQuantidade: String? = "Minimo 1".takeIf { quantidade == null || quantidade < 1 }
 
     val podeSalvar: Boolean =
-        erroNome == null && erroPeso == null && erroPureza == null && erroPreco == null
+        erroNome == null && erroPeso == null && erroPureza == null &&
+            erroPreco == null && erroQuantidade == null
 }
 
 class EditorViewModel(
@@ -120,6 +133,7 @@ class EditorViewModel(
                         tipo = peca.tipo,
                         nome = peca.nome,
                         marca = peca.marca,
+                        quantidade = peca.quantidade.toString(),
                         peso = paraCampo(peca.pesoGramas, casas = 3),
                         pureza = paraCampo(peca.pureza, casas = 4),
                         preco = paraCampo(peca.precoPago, casas = 2),
@@ -137,6 +151,7 @@ class EditorViewModel(
     fun definirTipo(tipo: TipoPeca) = atualizar { it.copy(tipo = tipo) }
     fun definirNome(valor: String) = atualizar { it.copy(nome = valor) }
     fun definirMarca(valor: String) = atualizar { it.copy(marca = valor) }
+    fun definirQuantidade(valor: String) = atualizar { it.copy(quantidade = valor.filter { c -> c.isDigit() }) }
     fun definirPeso(valor: String) = atualizar { it.copy(peso = valor) }
     fun definirPureza(valor: String) = atualizar { it.copy(pureza = valor) }
     fun definirPreco(valor: String) = atualizar { it.copy(preco = valor) }
@@ -175,6 +190,7 @@ class EditorViewModel(
                 tipo = f.tipo,
                 nome = f.nome.trim(),
                 marca = f.marca.trim(),
+                quantidade = (atual.quantidade ?: 1).coerceAtLeast(1),
                 pesoGramas = atual.pesoGramas ?: 0.0,
                 pureza = atual.pureza ?: 0.0,
                 precoPago = atual.precoPago ?: 0.0,

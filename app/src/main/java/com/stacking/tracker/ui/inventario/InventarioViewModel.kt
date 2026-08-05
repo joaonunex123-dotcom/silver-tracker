@@ -79,10 +79,12 @@ class InventarioViewModel(container: ContainerApp) : ViewModel() {
             CriterioOrdem.DATA -> compareBy({ it.peca.dataCompra }, { it.peca.id })
             // Sem cotacao o valor atual e zero para todas: cai no preco pago,
             // que e a melhor aproximacao disponivel offline.
+            // Sempre pelo total da linha: um lote de 20 pesa e vale mais que uma
+            // peca solta, e ordenar pelo unitario inverteria a lista.
             CriterioOrdem.VALOR -> compareBy {
-                if (it.valorAtual > 0.0) it.valorAtual else it.peca.precoPago
+                if (it.valorAtual > 0.0) it.valorAtual else it.precoPagoTotal
             }
-            CriterioOrdem.PESO -> compareBy { it.peca.pesoGramas }
+            CriterioOrdem.PESO -> compareBy { it.pesoTroyOz }
         }
         return if (f.decrescente) lista.sortedWith(comparador.reversed()) else lista.sortedWith(comparador)
     }

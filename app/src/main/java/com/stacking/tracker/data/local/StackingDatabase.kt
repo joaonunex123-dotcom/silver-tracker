@@ -8,7 +8,7 @@ import androidx.room.TypeConverters
 
 @Database(
     entities = [Peca::class, Cotacao::class],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 @TypeConverters(Conversores::class)
@@ -28,6 +28,9 @@ abstract class StackingDatabase : RoomDatabase() {
             instancia ?: synchronized(this) {
                 instancia ?: Room
                     .databaseBuilder(context.applicationContext, StackingDatabase::class.java, NOME)
+                    .addMigrations(MIGRACAO_1_2)
+                    // Sem fallbackToDestructiveMigration de proposito: preferimos
+                    // falhar alto a apagar a colecao de alguem em silencio.
                     .build()
                     .also { instancia = it }
             }

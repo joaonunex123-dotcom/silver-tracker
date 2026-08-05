@@ -307,7 +307,7 @@ private fun CartaoPeca(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Text(
-                    text = peca.nome,
+                    text = if (item.quantidade > 1) "${item.quantidade}x  ${peca.nome}" else peca.nome,
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,

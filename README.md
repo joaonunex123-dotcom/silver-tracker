@@ -98,6 +98,22 @@ aparece como valorização. Sem cotação de um dia anterior no histórico, most
 
 O widget também é redesenhado quando o app altera peças ou cotação, via `ContainerApp.avisarWidget()`.
 
+## Quantidade por peça
+
+Uma linha do inventário representa **N peças idênticas**. Vinte Maple Leafs iguais viram um cadastro
+com `quantidade = 20`, não vinte cadastros.
+
+Convenção que atravessa o código: na entity, **peso e preço são por unidade**; os totais saem
+multiplicando pela quantidade. Em `Calculos.kt`, as propriedades sem sufixo (`ozFinas`, `pesoTroyOz`,
+`precoPagoTotal`) já são o **total da linha**, e as unitárias levam sufixo (`ozFinasUnidade`). Isso
+foi escolhido para que toda tela que já somava totais continuasse correta sem alteração.
+
+O prêmio é uma razão, então não muda com a quantidade — o prêmio em reais, sim.
+
+Migração `v1 → v2`: `ALTER TABLE pecas ADD COLUMN quantidade INTEGER NOT NULL DEFAULT 1`. O default
+faz cada linha antiga continuar valendo exatamente o que valia. As duas sobrecargas de `migrate` são
+implementadas de propósito — ver [Migracoes.kt](app/src/main/java/com/stacking/tracker/data/local/Migracoes.kt).
+
 ## Cálculos
 
 ```

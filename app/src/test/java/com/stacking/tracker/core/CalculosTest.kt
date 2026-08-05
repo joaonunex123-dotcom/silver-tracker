@@ -141,6 +141,66 @@ class CalculosTest {
     }
 
     @Test
+    fun `quantidade multiplica peso e preco da linha`() {
+        val lote = peca(gramas = 31.1035, pureza = 1.0, preco = 200.0).copy(quantidade = 20)
+
+        assertEquals(1.0, lote.pesoTroyOzUnidade, 1e-9)
+        assertEquals(1.0, lote.ozFinasUnidade, 1e-9)
+        assertEquals(20.0, lote.pesoTroyOz, 1e-9)
+        assertEquals(20.0, lote.ozFinas, 1e-9)
+        assertEquals(622.07, lote.gramasTotal, 1e-6)
+        assertEquals(4000.0, lote.precoPagoTotal, 1e-9)
+    }
+
+    @Test
+    fun `um lote equivale a varias linhas iguais`() {
+        val cotacao = Cotacao(id = 1, data = 100, precoOzUsd = 30.0, precoOzBrl = 200.0)
+        val resolvedor = ResolvedorSpot(listOf(cotacao))
+        val base = peca(gramas = 31.1035, pureza = 1.0, preco = 180.0, data = 200)
+
+        val comoLote = resumirCarteira(
+            listOf(base.copy(quantidade = 5).calcular(cotacao, resolvedor)),
+            cotacao,
+        )
+        val comoLinhas = resumirCarteira(
+            List(5) { base.calcular(cotacao, resolvedor) },
+            cotacao,
+        )
+
+        assertEquals(comoLinhas.quantidadePecas, comoLote.quantidadePecas)
+        assertEquals(comoLinhas.totalOzFinas, comoLote.totalOzFinas, 1e-9)
+        assertEquals(comoLinhas.totalInvestido, comoLote.totalInvestido, 1e-9)
+        assertEquals(comoLinhas.valorMercado, comoLote.valorMercado, 1e-9)
+        assertEquals(comoLinhas.premioMedioPercent!!, comoLote.premioMedioPercent!!, 1e-9)
+        // A diferenca esta so na contagem de linhas.
+        assertEquals(1, comoLote.linhas)
+        assertEquals(5, comoLinhas.linhas)
+    }
+
+    @Test
+    fun `premio nao depende da quantidade`() {
+        val cotacao = Cotacao(id = 1, data = 100, precoOzUsd = 30.0, precoOzBrl = 200.0)
+        val resolvedor = ResolvedorSpot(listOf(cotacao))
+        // Pagou 220 por peca de 1 oz fina que valia 200 de metal: 10% de premio.
+        val base = peca(gramas = 31.1035, pureza = 1.0, preco = 220.0, data = 200)
+
+        val uma = base.calcular(cotacao, resolvedor)
+        val dez = base.copy(quantidade = 10).calcular(cotacao, resolvedor)
+
+        assertEquals(10.0, uma.premioPercent!!, 1e-9)
+        assertEquals(10.0, dez.premioPercent!!, 1e-9)
+        // Ja o premio em reais escala com a quantidade.
+        assertEquals(20.0, uma.premioReais!!, 1e-9)
+        assertEquals(200.0, dez.premioReais!!, 1e-9)
+    }
+
+    @Test
+    fun `peca antiga sem quantidade vale como uma unidade`() {
+        // O default da entity e o mesmo DEFAULT 1 da migracao v1 -> v2.
+        assertEquals(1, peca().quantidade)
+    }
+
+    @Test
     fun `preco por grama divide o spot pela onca troy`() {
         // A 320 BRL a onca troy, o grama sai a 320 / 31,1035.
         assertEquals(10.288, precoPorGrama(320.0), 1e-3)

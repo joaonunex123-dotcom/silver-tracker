@@ -39,17 +39,37 @@ fun variacaoDoEstoque(
     )
 }
 
-/** Peso bruto da peca em oncas troy. */
-val Peca.pesoTroyOz: Double
+// Uma linha do inventario pode representar N pecas identicas. Por convencao, as
+// propriedades SEM sufixo sao o total da linha (ja multiplicado pela quantidade),
+// porque e o que praticamente toda tela quer mostrar. As unitarias levam sufixo.
+
+/** Peso bruto de UMA peca, em oncas troy. */
+val Peca.pesoTroyOzUnidade: Double
     get() = gramasParaOzTroy(pesoGramas)
 
-/** Prata pura contida na peca, em oncas troy (ASW). */
-val Peca.ozFinas: Double
-    get() = pesoTroyOz * pureza
+/** Prata pura de UMA peca, em oncas troy (ASW). */
+val Peca.ozFinasUnidade: Double
+    get() = pesoTroyOzUnidade * pureza
 
-/** Prata pura contida na peca, em gramas. */
+/** Peso bruto da linha inteira, em oncas troy. */
+val Peca.pesoTroyOz: Double
+    get() = pesoTroyOzUnidade * quantidade
+
+/** Prata pura da linha inteira, em oncas troy (ASW). */
+val Peca.ozFinas: Double
+    get() = ozFinasUnidade * quantidade
+
+/** Peso bruto da linha inteira, em gramas. */
+val Peca.gramasTotal: Double
+    get() = pesoGramas * quantidade
+
+/** Prata pura da linha inteira, em gramas. */
 val Peca.gramasFinos: Double
-    get() = pesoGramas * pureza
+    get() = gramasTotal * pureza
+
+/** Valor pago pela linha inteira. */
+val Peca.precoPagoTotal: Double
+    get() = precoPago * quantidade
 
 /** valorAtualPeca = pesoTroyOz * pureza * precoOzAtual */
 fun calcularValorAtual(peca: Peca, precoOzBrl: Double): Double = peca.ozFinas * precoOzBrl
@@ -104,16 +124,29 @@ data class PecaCalculada(
     val precoOzBrlAtual: Double,
     val precoOzBrlNaCompra: Double,
 ) {
+    val quantidade: Int = peca.quantidade
+
+    /** Totais da linha. */
     val pesoTroyOz: Double = peca.pesoTroyOz
     val ozFinas: Double = peca.ozFinas
+    val precoPagoTotal: Double = peca.precoPagoTotal
+
+    /** Unitarios, para a tela de detalhe mostrar o preco de uma peca so. */
+    val ozFinasUnidade: Double = peca.ozFinasUnidade
+    val pesoTroyOzUnidade: Double = peca.pesoTroyOzUnidade
+
     val valorAtual: Double = calcularValorAtual(peca, precoOzBrlAtual)
     val valorSpotNaCompra: Double = calcularValorSpot(peca, precoOzBrlNaCompra)
-    val premioPercent: Double? = calcularPremioPercent(peca.precoPago, valorSpotNaCompra)
-    val premioReais: Double? = if (valorSpotNaCompra > 0.0) peca.precoPago - valorSpotNaCompra else null
-    val lucro: Double? = if (precoOzBrlAtual > 0.0) valorAtual - peca.precoPago else null
+
+    // Premio e razao: da no mesmo calcular por unidade ou pelo total, desde que
+    // numerador e denominador estejam na mesma escala.
+    val premioPercent: Double? = calcularPremioPercent(precoPagoTotal, valorSpotNaCompra)
+    val premioReais: Double? =
+        if (valorSpotNaCompra > 0.0) precoPagoTotal - valorSpotNaCompra else null
+    val lucro: Double? = if (precoOzBrlAtual > 0.0) valorAtual - precoPagoTotal else null
     val lucroPercent: Double? =
-        if (precoOzBrlAtual > 0.0 && peca.precoPago > 0.0) {
-            (valorAtual - peca.precoPago) / peca.precoPago * 100.0
+        if (precoOzBrlAtual > 0.0 && precoPagoTotal > 0.0) {
+            (valorAtual - precoPagoTotal) / precoPagoTotal * 100.0
         } else {
             null
         }
@@ -128,7 +161,10 @@ fun Peca.calcular(cotacaoAtual: Cotacao?, resolvedor: ResolvedorSpot): PecaCalcu
 
 /** Numeros agregados da carteira inteira. */
 data class ResumoCarteira(
+    /** Soma das quantidades: o numero de pecas que o usuario tem de fato. */
     val quantidadePecas: Int = 0,
+    /** Linhas do inventario. Menor que [quantidadePecas] quando ha lotes. */
+    val linhas: Int = 0,
     val totalGramas: Double = 0.0,
     val totalOzTroy: Double = 0.0,
     val totalOzFinas: Double = 0.0,
@@ -146,9 +182,9 @@ data class ResumoCarteira(
 fun resumirCarteira(pecas: List<PecaCalculada>, cotacao: Cotacao?): ResumoCarteira {
     if (pecas.isEmpty()) return ResumoCarteira(cotacao = cotacao)
 
-    val totalGramas = pecas.sumOf { it.peca.pesoGramas }
+    val totalGramas = pecas.sumOf { it.peca.gramasTotal }
     val totalOzFinas = pecas.sumOf { it.ozFinas }
-    val totalInvestido = pecas.sumOf { it.peca.precoPago }
+    val totalInvestido = pecas.sumOf { it.precoPagoTotal }
     val precoAtual = cotacao?.precoOzBrl ?: 0.0
     val valorMercado = if (precoAtual > 0.0) totalOzFinas * precoAtual else 0.0
 
@@ -156,12 +192,13 @@ fun resumirCarteira(pecas: List<PecaCalculada>, cotacao: Cotacao?): ResumoCartei
     // considerando apenas as pecas que tem spot de referencia no historico.
     val comReferencia = pecas.filter { it.valorSpotNaCompra > 0.0 }
     val spotAcumulado = comReferencia.sumOf { it.valorSpotNaCompra }
-    val pagoAcumulado = comReferencia.sumOf { it.peca.precoPago }
+    val pagoAcumulado = comReferencia.sumOf { it.precoPagoTotal }
     val premioMedio =
         if (spotAcumulado > 0.0) (pagoAcumulado - spotAcumulado) / spotAcumulado * 100.0 else null
 
     return ResumoCarteira(
-        quantidadePecas = pecas.size,
+        quantidadePecas = pecas.sumOf { it.quantidade },
+        linhas = pecas.size,
         totalGramas = totalGramas,
         totalOzTroy = pecas.sumOf { it.pesoTroyOz },
         totalOzFinas = totalOzFinas,
