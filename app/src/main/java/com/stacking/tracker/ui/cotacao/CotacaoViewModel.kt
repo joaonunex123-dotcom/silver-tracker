@@ -52,6 +52,7 @@ class CotacaoViewModel(private val container: ContainerApp) : ViewModel() {
                 is ResultadoCotacao.Falha -> resultado.mensagem
             }
             atualizando.value = false
+            container.avisarWidget()
         }
     }
 
@@ -59,13 +60,19 @@ class CotacaoViewModel(private val container: ContainerApp) : ViewModel() {
     fun registrarManual(precoOzUsd: Double, usdBrl: Double) {
         viewModelScope.launch {
             runCatching { container.cotacaoRepository.registrarManual(precoOzUsd, usdBrl) }
-                .onSuccess { mensagem.value = "Cotacao manual registrada." }
+                .onSuccess {
+                    mensagem.value = "Cotacao manual registrada."
+                    container.avisarWidget()
+                }
                 .onFailure { mensagem.value = it.message ?: "Falha ao registrar a cotacao." }
         }
     }
 
     fun excluir(id: Long) {
-        viewModelScope.launch { container.cotacaoRepository.excluir(id) }
+        viewModelScope.launch {
+            container.cotacaoRepository.excluir(id)
+            container.avisarWidget()
+        }
     }
 
     fun limparMensagem() {

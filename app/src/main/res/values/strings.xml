@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Stacking</string>
+
+    <string name="widget_prata_grama">PRATA / GRAMA</string>
+    <string name="widget_meu_stack">MEU STACK</string>
+    <string name="widget_atualizar">atualizar</string>
+    <string name="widget_vazio">--</string>
+    <string name="widget_descricao">Preco da prata por grama e valor do seu estoque</string>
 </resources>

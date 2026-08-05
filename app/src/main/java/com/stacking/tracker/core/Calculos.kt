@@ -11,6 +11,34 @@ fun gramasParaOzTroy(gramas: Double): Double = gramas / GRAMAS_POR_OZ_TROY
 
 fun ozTroyParaGramas(oz: Double): Double = oz * GRAMAS_POR_OZ_TROY
 
+/** Preco de um grama de prata pura, derivado do spot por onca troy. */
+fun precoPorGrama(precoOzBrl: Double): Double = precoOzBrl / GRAMAS_POR_OZ_TROY
+
+/**
+ * Variacao do estoque entre duas cotacoes, mantendo a quantidade de metal fixa.
+ * Mede movimento de **preco**, nao compras: e o que o widget mostra como "hoje".
+ */
+data class VariacaoEstoque(
+    val valorAgora: Double,
+    val valorAntes: Double,
+) {
+    val diferenca: Double = valorAgora - valorAntes
+    val percentual: Double? =
+        if (valorAntes > 0.0) diferenca / valorAntes * 100.0 else null
+}
+
+fun variacaoDoEstoque(
+    ozFinas: Double,
+    precoOzBrlAgora: Double,
+    precoOzBrlAntes: Double,
+): VariacaoEstoque? {
+    if (ozFinas <= 0.0 || precoOzBrlAgora <= 0.0 || precoOzBrlAntes <= 0.0) return null
+    return VariacaoEstoque(
+        valorAgora = ozFinas * precoOzBrlAgora,
+        valorAntes = ozFinas * precoOzBrlAntes,
+    )
+}
+
 /** Peso bruto da peca em oncas troy. */
 val Peca.pesoTroyOz: Double
     get() = gramasParaOzTroy(pesoGramas)

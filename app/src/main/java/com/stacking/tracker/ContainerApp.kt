@@ -5,6 +5,7 @@ import com.stacking.tracker.data.local.StackingDatabase
 import com.stacking.tracker.data.remote.Rede
 import com.stacking.tracker.data.repo.CotacaoRepository
 import com.stacking.tracker.data.repo.PecaRepository
+import com.stacking.tracker.ui.widget.WidgetStack
 import com.stacking.tracker.util.ArmazenamentoFotos
 import com.stacking.tracker.util.PreferenciasApp
 
@@ -21,6 +22,9 @@ class ContainerApp(context: Context) {
     val armazenamentoFotos by lazy { ArmazenamentoFotos(appContext) }
 
     val preferencias by lazy { PreferenciasApp(appContext) }
+
+    /** Chamado depois de mexer em pecas ou cotacao, para o widget nao ficar velho. */
+    fun avisarWidget() = WidgetStack.redesenhar(appContext)
 
     val pecaRepository by lazy { PecaRepository(banco.pecaDao(), armazenamentoFotos) }
 

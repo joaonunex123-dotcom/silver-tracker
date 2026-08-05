@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Layout de widget: so componentes aceitos por RemoteViews (LinearLayout e TextView).
+  Nada de ConstraintLayout nem Compose aqui.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_raiz"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/widget_fundo"
+    android:padding="14dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/widget_prata_grama"
+            android:textColor="@color/widget_rotulo"
+            android:textSize="10sp"
+            android:letterSpacing="0.08"
+            android:maxLines="1" />
+
+        <TextView
+            android:id="@+id/widget_atualizar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/widget_atualizar"
+            android:textColor="@color/widget_rotulo"
+            android:textSize="10sp"
+            android:letterSpacing="0.08"
+            android:paddingStart="8dp"
+            android:paddingEnd="2dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/widget_grama"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1dp"
+        android:text="@string/widget_vazio"
+        android:textColor="@color/widget_texto"
+        android:textSize="22sp"
+        android:maxLines="1" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="@string/widget_meu_stack"
+        android:textColor="@color/widget_rotulo"
+        android:textSize="10sp"
+        android:letterSpacing="0.08"
+        android:maxLines="1" />
+
+    <TextView
+        android:id="@+id/widget_stack"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1dp"
+        android:text="@string/widget_vazio"
+        android:textColor="@color/widget_texto"
+        android:textSize="22sp"
+        android:maxLines="1" />
+
+    <TextView
+        android:id="@+id/widget_hoje"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/widget_vazio"
+        android:textColor="@color/widget_rotulo"
+        android:textSize="13sp"
+        android:maxLines="1" />
+</LinearLayout>

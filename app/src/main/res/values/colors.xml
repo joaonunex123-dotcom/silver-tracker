@@ -2,4 +2,11 @@
 <resources>
     <color name="fundo_escuro">#0E0E10</color>
     <color name="ic_launcher_background">#0E0E10</color>
+
+    <!-- O widget nao le o tema do Compose, entao fixa a paleta escura do app. -->
+    <color name="widget_fundo">#141417</color>
+    <color name="widget_texto">#EDEDF0</color>
+    <color name="widget_rotulo">#95959F</color>
+    <color name="widget_positivo">#56D68A</color>
+    <color name="widget_negativo">#F0736B</color>
 </resources>

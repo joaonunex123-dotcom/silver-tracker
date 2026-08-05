@@ -74,6 +74,7 @@ class DashboardViewModel(private val container: ContainerApp) : ViewModel() {
                 is ResultadoCotacao.Falha -> resultado.mensagem
             }
             atualizando.value = false
+            container.avisarWidget()
         }
     }
 

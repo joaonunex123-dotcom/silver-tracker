@@ -141,6 +141,33 @@ class CalculosTest {
     }
 
     @Test
+    fun `preco por grama divide o spot pela onca troy`() {
+        // A 320 BRL a onca troy, o grama sai a 320 / 31,1035.
+        assertEquals(10.288, precoPorGrama(320.0), 1e-3)
+        assertEquals(320.0, precoPorGrama(320.0) * GRAMAS_POR_OZ_TROY, 1e-9)
+    }
+
+    @Test
+    fun `variacao do estoque mede movimento de preco`() {
+        val v = variacaoDoEstoque(ozFinas = 10.0, precoOzBrlAgora = 330.0, precoOzBrlAntes = 300.0)!!
+        assertEquals(3300.0, v.valorAgora, 1e-9)
+        assertEquals(3000.0, v.valorAntes, 1e-9)
+        assertEquals(300.0, v.diferenca, 1e-9)
+        assertEquals(10.0, v.percentual!!, 1e-9)
+
+        val queda = variacaoDoEstoque(ozFinas = 10.0, precoOzBrlAgora = 270.0, precoOzBrlAntes = 300.0)!!
+        assertEquals(-300.0, queda.diferenca, 1e-9)
+        assertEquals(-10.0, queda.percentual!!, 1e-9)
+    }
+
+    @Test
+    fun `variacao e nula sem estoque ou sem referencia`() {
+        assertNull(variacaoDoEstoque(ozFinas = 0.0, precoOzBrlAgora = 330.0, precoOzBrlAntes = 300.0))
+        assertNull(variacaoDoEstoque(ozFinas = 10.0, precoOzBrlAgora = 0.0, precoOzBrlAntes = 300.0))
+        assertNull(variacaoDoEstoque(ozFinas = 10.0, precoOzBrlAgora = 330.0, precoOzBrlAntes = 0.0))
+    }
+
+    @Test
     fun `leitura de numero aceita virgula e ponto`() {
         assertEquals(1234.56, paraDoubleOuNulo("1.234,56")!!, 1e-9)
         assertEquals(0.999, paraDoubleOuNulo("0.999")!!, 1e-9)

@@ -25,6 +25,10 @@ interface PecaDao {
     @Query("SELECT * FROM pecas WHERE id = :id")
     suspend fun porId(id: Long): Peca?
 
+    /** Leitura pontual, usada pelo widget, que roda fora de qualquer tela. */
+    @Query("SELECT * FROM pecas")
+    suspend fun todas(): List<Peca>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun inserir(peca: Peca): Long
 

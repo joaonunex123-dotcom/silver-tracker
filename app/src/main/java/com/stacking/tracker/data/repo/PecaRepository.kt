@@ -16,6 +16,9 @@ class PecaRepository(
 
     suspend fun porId(id: Long): Peca? = dao.porId(id)
 
+    /** Leitura pontual para o widget, que nao tem ciclo de vida para observar Flow. */
+    suspend fun todas(): List<Peca> = dao.todas()
+
     suspend fun salvar(peca: Peca): Long =
         if (peca.id == 0L) {
             dao.inserir(peca)

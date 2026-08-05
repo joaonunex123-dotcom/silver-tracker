@@ -74,6 +74,20 @@ mão no mesmo histórico — útil também para registrar o spot de uma compra a
 | Detalhe | Ficha completa, foto, prêmio contra o spot da compra, editar e excluir |
 | Cotação | Spot USD e BRL, botão de atualizar, entrada manual e histórico |
 
+## Widget
+
+Widget de tela inicial com três números: preço do **grama** de prata, valor do estoque e variação
+do dia. Toque no corpo abre o app; toque em "atualizar" busca a cotação e redesenha na hora.
+
+Feito com **RemoteViews**, não com Glance — são três números, e o Glance traria mais uma dependência
+para alinhar com uma matriz de versões que já é apertada.
+
+A variação "de hoje" compara o estoque ao spot atual contra o **mesmo** estoque ao spot da última
+cotação anterior a hoje. Ou seja, mede movimento de preço, não compras: cadastrar uma moeda hoje não
+aparece como valorização. Sem cotação de um dia anterior no histórico, mostra `--`.
+
+O widget também é redesenhado quando o app altera peças ou cotação, via `ContainerApp.avisarWidget()`.
+
 ## Cálculos
 
 ```

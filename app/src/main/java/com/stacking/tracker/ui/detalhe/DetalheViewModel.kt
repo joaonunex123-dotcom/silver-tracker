@@ -60,7 +60,10 @@ class DetalheViewModel(
         val peca = estado.value.calculada?.peca ?: return
         viewModelScope.launch {
             runCatching { container.pecaRepository.excluir(peca) }
-                .onSuccess { _eventos.emit(EventoDetalhe.Excluido) }
+                .onSuccess {
+                    container.avisarWidget()
+                    _eventos.emit(EventoDetalhe.Excluido)
+                }
                 .onFailure { _eventos.emit(EventoDetalhe.Erro(it.message ?: "Falha ao excluir.")) }
         }
     }

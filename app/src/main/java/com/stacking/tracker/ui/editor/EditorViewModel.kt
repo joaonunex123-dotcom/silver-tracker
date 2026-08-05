@@ -186,7 +186,10 @@ class EditorViewModel(
             val resultado = runCatching { container.pecaRepository.salvar(peca) }
             salvando.value = false
             resultado
-                .onSuccess { id -> _eventos.emit(EventoEditor.Salvo(id)) }
+                .onSuccess { id ->
+                    container.avisarWidget()
+                    _eventos.emit(EventoEditor.Salvo(id))
+                }
                 .onFailure { _eventos.emit(EventoEditor.Erro(it.message ?: "Falha ao salvar.")) }
         }
     }
