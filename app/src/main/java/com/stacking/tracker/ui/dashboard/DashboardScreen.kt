@@ -60,6 +60,7 @@ fun DashboardScreen(
     modoTema: ModoTema,
     onAlternarTema: () -> Unit,
     onVerCotacao: () -> Unit,
+    onVerInventario: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DashboardViewModel = viewModel(factory = FabricaViewModel),
 ) {
@@ -120,11 +121,64 @@ fun DashboardScreen(
                 .padding(bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            if (!estado.carregando && estado.resumo.quantidadePecas == 0) {
+                PrimeirosPassos(
+                    temCotacao = estado.resumo.temCotacao,
+                    onVerCotacao = onVerCotacao,
+                    onVerInventario = onVerInventario,
+                )
+            }
             ValorDeMercado(estado.resumo, onVerCotacao)
             LinhaDeMetricas(estado.resumo)
             BlocoEstoque(estado.resumo)
             if (estado.porTipo.isNotEmpty()) BlocoPorTipo(estado.porTipo)
             BlocoSpot(estado.resumo, onVerCotacao)
+        }
+    }
+}
+
+/**
+ * Carteira vazia: a ordem importa. Sem cotacao no historico o premio de qualquer
+ * peca cadastrada sai vazio, entao a cotacao vem primeiro.
+ */
+@Composable
+private fun PrimeirosPassos(
+    temCotacao: Boolean,
+    onVerCotacao: () -> Unit,
+    onVerInventario: () -> Unit,
+) {
+    Painel(modifier = Modifier.fillMaxWidth()) { interno ->
+        Column(
+            modifier = interno.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Rotulo("Primeiros passos")
+            Text(
+                text = if (temCotacao) {
+                    "Cotacao registrada. Agora cadastre suas pecas no Inventario."
+                } else {
+                    "Registre a cotacao antes de cadastrar as pecas: o premio de cada compra " +
+                        "e calculado contra o spot do dia dela."
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                if (!temCotacao) {
+                    TextButton(
+                        onClick = onVerCotacao,
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                    ) {
+                        Text("Lancar cotacao", style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+                TextButton(
+                    onClick = onVerInventario,
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                ) {
+                    Text("Adicionar peca", style = MaterialTheme.typography.bodySmall)
+                }
+            }
         }
     }
 }

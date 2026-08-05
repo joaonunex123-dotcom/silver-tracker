@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -49,6 +50,20 @@ private data class ItemAba(
     val rotulo: String,
     val icone: ImageVector,
 )
+
+/**
+ * Troca de aba preservando o estado de cada uma e sem empilhar back stack.
+ * Usado tanto pela barra inferior quanto pelos atalhos do Painel: navegar cru
+ * para uma aba faria o botao voltar percorrer um rastro de abas visitadas.
+ */
+private fun NavHostController.irParaAba(rota: String) {
+    if (currentDestination?.route == rota) return
+    navigate(rota) {
+        popUpTo(graph.findStartDestination().id) { saveState = true }
+        launchSingleTop = true
+        restoreState = true
+    }
+}
 
 private val ABAS = listOf(
     ItemAba(Rotas.DASHBOARD, "Painel", Icons.Outlined.PieChart),
@@ -81,17 +96,7 @@ fun AppNavegacao(
                     ABAS.forEach { aba ->
                         NavigationBarItem(
                             selected = rotaAtual == aba.rota,
-                            onClick = {
-                                if (rotaAtual != aba.rota) {
-                                    navController.navigate(aba.rota) {
-                                        popUpTo(navController.graph.findStartDestination().id) {
-                                            saveState = true
-                                        }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
-                                }
-                            },
+                            onClick = { navController.irParaAba(aba.rota) },
                             icon = { Icon(aba.icone, contentDescription = null) },
                             label = { Text(aba.rotulo, style = MaterialTheme.typography.labelSmall) },
                             colors = NavigationBarItemDefaults.colors(
@@ -118,7 +123,8 @@ fun AppNavegacao(
                 DashboardScreen(
                     modoTema = modoTema,
                     onAlternarTema = onAlternarTema,
-                    onVerCotacao = { navController.navigate(Rotas.COTACAO) },
+                    onVerCotacao = { navController.irParaAba(Rotas.COTACAO) },
+                    onVerInventario = { navController.irParaAba(Rotas.INVENTARIO) },
                 )
             }
 
