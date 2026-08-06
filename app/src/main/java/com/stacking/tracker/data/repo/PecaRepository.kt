@@ -2,11 +2,13 @@ package com.stacking.tracker.data.repo
 
 import com.stacking.tracker.data.local.Peca
 import com.stacking.tracker.data.local.PecaDao
+import com.stacking.tracker.data.local.VendaDao
 import com.stacking.tracker.util.ArmazenamentoFotos
 import kotlinx.coroutines.flow.Flow
 
 class PecaRepository(
     private val dao: PecaDao,
+    private val vendaDao: VendaDao,
     private val fotos: ArmazenamentoFotos,
 ) {
 
@@ -34,6 +36,9 @@ class PecaRepository(
 
     suspend fun excluir(peca: Peca) {
         peca.fotoPath?.let { fotos.excluir(it) }
+        // A tabela de vendas nao tem chave estrangeira (para simplificar a
+        // migracao), entao a limpeza em cascata e feita aqui.
+        vendaDao.excluirDaPeca(peca.id)
         dao.excluir(peca)
     }
 }

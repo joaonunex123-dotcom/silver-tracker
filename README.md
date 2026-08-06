@@ -114,6 +114,34 @@ Migração `v1 → v2`: `ALTER TABLE pecas ADD COLUMN quantidade INTEGER NOT NUL
 faz cada linha antiga continuar valendo exatamente o que valia. As duas sobrecargas de `migrate` são
 implementadas de propósito — ver [Migracoes.kt](app/src/main/java/com/stacking/tracker/data/local/Migracoes.kt).
 
+## Vendas
+
+Vender **não apaga nem reduz** a peça. A linha de compra fica intacta e a venda entra como registro
+separado, em `vendas`. O estoque atual sai da subtração:
+
+```
+emEstoque = peca.quantidade − soma(vendas.quantidade)
+```
+
+Isso é o que permite vender parte de um lote, preservar o custo original para calcular lucro, e
+separar duas coisas que não se misturam:
+
+| | |
+|---|---|
+| **Realizado** | recebido nas vendas − custo do que saiu. Dinheiro no bolso. |
+| **Não realizado** | valor de mercado do que sobrou − custo do que sobrou. No papel. |
+
+O Painel mostra valor de mercado, investido e lucro considerando **apenas o que ainda está em
+mãos** — comparar mercado com o custo de peças já vendidas daria um lucro fantasma. "Realizado"
+aparece como métrica própria depois da primeira venda.
+
+O **prêmio** continua olhando a compra inteira, incluindo o que já saiu: é um fato histórico sobre
+aquela compra e vender depois não muda quanto se pagou acima do spot naquele dia.
+
+Migração `v2 → v3`: cria a tabela `vendas`. Sem chave estrangeira de propósito — mantém o
+`CREATE TABLE` simples e reduz a chance de divergir do que o Room espera; a limpeza em cascata fica
+no `PecaRepository`.
+
 ## Cálculos
 
 ```

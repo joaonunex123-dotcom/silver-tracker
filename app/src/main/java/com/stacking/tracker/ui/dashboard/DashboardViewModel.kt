@@ -38,12 +38,14 @@ class DashboardViewModel(private val container: ContainerApp) : ViewModel() {
     val estado: StateFlow<EstadoDashboard> = combine(
         container.pecaRepository.observarTodas(),
         container.cotacaoRepository.observarHistorico(),
+        container.vendaRepository.observarTodas(),
         atualizando,
         mensagem,
-    ) { pecas, historico, ocupado, aviso ->
+    ) { pecas, historico, vendas, ocupado, aviso ->
         val resolvedor = ResolvedorSpot(historico)
         val atual = historico.firstOrNull()
-        val calculadas = pecas.map { it.calcular(atual, resolvedor) }
+        val porPeca = vendas.groupBy { it.pecaId }
+        val calculadas = pecas.map { it.calcular(atual, resolvedor, porPeca[it.id].orEmpty()) }
 
         EstadoDashboard(
             carregando = false,

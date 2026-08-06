@@ -196,14 +196,24 @@ private fun LinhaInvestimento(resumo: ResumoCarteira) {
             valor = formatarBrl(resumo.totalInvestido),
             modifier = Modifier.weight(1f),
         )
-        MetricaCompacta(
-            rotulo = "Premio medio",
-            valor = resumo.premioMedioPercent?.let { formatarPercentAssinado(it) } ?: "--",
-            // Premio alto e ruim para quem compra: inverte o sinal da cor.
-            corValor = resumo.premioMedioPercent?.let { cores.para(-it) }
-                ?: MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.weight(1f),
-        )
+        if (resumo.temVendas) {
+            // So aparece depois da primeira venda: ate la seria uma coluna de zeros.
+            MetricaCompacta(
+                rotulo = "Realizado",
+                valor = formatarBrlAssinado(resumo.lucroRealizado),
+                corValor = cores.para(resumo.lucroRealizado),
+                modifier = Modifier.weight(1f),
+            )
+        } else {
+            MetricaCompacta(
+                rotulo = "Premio medio",
+                valor = resumo.premioMedioPercent?.let { formatarPercentAssinado(it) } ?: "--",
+                // Premio alto e ruim para quem compra: inverte o sinal da cor.
+                corValor = resumo.premioMedioPercent?.let { cores.para(-it) }
+                    ?: MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f),
+            )
+        }
     }
 }
 

@@ -3,6 +3,7 @@ package com.stacking.tracker.core
 import com.stacking.tracker.data.local.Cotacao
 import com.stacking.tracker.data.local.Peca
 import com.stacking.tracker.data.local.TipoPeca
+import com.stacking.tracker.data.local.Venda
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -198,6 +199,82 @@ class CalculosTest {
     fun `peca antiga sem quantidade vale como uma unidade`() {
         // O default da entity e o mesmo DEFAULT 1 da migracao v1 -> v2.
         assertEquals(1, peca().quantidade)
+    }
+
+    private fun venda(pecaId: Long, qtd: Int, precoUnitario: Double) =
+        Venda(pecaId = pecaId, quantidade = qtd, precoUnitario = precoUnitario, data = 300)
+
+    @Test
+    fun `venda parcial tira do estoque sem apagar a compra`() {
+        val cotacao = Cotacao(id = 1, data = 100, precoOzUsd = 30.0, precoOzBrl = 200.0)
+        val resolvedor = ResolvedorSpot(listOf(cotacao))
+        // 20 pecas de 1 oz fina, R$ 180 cada. Vende 5 por R$ 300 cada.
+        val lote = peca(gramas = 31.1035, pureza = 1.0, preco = 180.0, data = 200)
+            .copy(id = 7, quantidade = 20)
+        val c = lote.calcular(cotacao, resolvedor, listOf(venda(7, 5, 300.0)))
+
+        assertEquals(20, c.quantidade)
+        assertEquals(5, c.quantidadeVendida)
+        assertEquals(15, c.quantidadeEmEstoque)
+        // Estoque e valor de mercado so contam as 15 que sobraram.
+        assertEquals(15.0, c.ozFinas, 1e-9)
+        assertEquals(3000.0, c.valorAtual, 1e-9)
+        assertEquals(2700.0, c.custoEmEstoque, 1e-9)
+        // Realizado: recebeu 1500, custaram 900.
+        assertEquals(1500.0, c.recebidoEmVendas, 1e-9)
+        assertEquals(900.0, c.custoVendido, 1e-9)
+        assertEquals(600.0, c.lucroRealizado, 1e-9)
+        assertEquals(66.666666, c.lucroRealizadoPercent!!, 1e-5)
+    }
+
+    @Test
+    fun `vender tudo zera o estoque mas mantem o realizado`() {
+        val cotacao = Cotacao(id = 1, data = 100, precoOzUsd = 30.0, precoOzBrl = 200.0)
+        val resolvedor = ResolvedorSpot(listOf(cotacao))
+        val p = peca(gramas = 31.1035, pureza = 1.0, preco = 180.0, data = 200).copy(id = 9)
+        val c = p.calcular(cotacao, resolvedor, listOf(venda(9, 1, 360.0)))
+
+        assertEquals(0, c.quantidadeEmEstoque)
+        assertEquals(0.0, c.ozFinas, 1e-9)
+        assertEquals(0.0, c.valorAtual, 1e-9)
+        assertEquals(180.0, c.lucroRealizado, 1e-9)
+        assertEquals(100.0, c.lucroRealizadoPercent!!, 1e-9)
+        // Sem estoque nao ha lucro no papel a calcular.
+        assertNull(c.lucroPercent)
+    }
+
+    @Test
+    fun `carteira separa realizado de nao realizado`() {
+        val cotacao = Cotacao(id = 1, data = 100, precoOzUsd = 30.0, precoOzBrl = 200.0)
+        val resolvedor = ResolvedorSpot(listOf(cotacao))
+        val lote = peca(gramas = 31.1035, pureza = 1.0, preco = 180.0, data = 200)
+            .copy(id = 7, quantidade = 10)
+        val resumo = resumirCarteira(
+            listOf(lote.calcular(cotacao, resolvedor, listOf(venda(7, 4, 300.0)))),
+            cotacao,
+        )
+
+        assertEquals(6, resumo.quantidadePecas)
+        assertEquals(1080.0, resumo.totalInvestido, 1e-9)
+        assertEquals(1200.0, resumo.valorMercado, 1e-9)
+        assertEquals(120.0, resumo.lucro, 1e-9)
+        assertEquals(480.0, resumo.lucroRealizado, 1e-9)
+        assertEquals(1200.0, resumo.recebidoEmVendas, 1e-9)
+        assertEquals(4, resumo.quantidadeVendida)
+    }
+
+    @Test
+    fun `resultado de uma venda diz se ganhou ou perdeu`() {
+        val ganho = ResultadoVenda(venda(1, 5, 300.0), custoUnitario = 180.0)
+        assertEquals(1500.0, ganho.recebido, 1e-9)
+        assertEquals(900.0, ganho.custo, 1e-9)
+        assertEquals(600.0, ganho.lucro, 1e-9)
+        assertEquals(true, ganho.ganhou)
+
+        val perda = ResultadoVenda(venda(1, 2, 100.0), custoUnitario = 180.0)
+        assertEquals(-160.0, perda.lucro, 1e-9)
+        assertEquals(false, perda.ganhou)
+        assertEquals(-44.444444, perda.lucroPercent!!, 1e-5)
     }
 
     @Test

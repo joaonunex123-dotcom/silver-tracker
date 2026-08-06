@@ -29,3 +29,34 @@ val MIGRACAO_1_2 = object : Migration(1, 2) {
         db.execSQL(ADICIONA_QUANTIDADE)
     }
 }
+
+/**
+ * v2 -> v3: tabela de vendas.
+ *
+ * O SQL abaixo precisa bater **caractere a caractere** com o que o Room gera para
+ * a entity [Venda]; ele compara os dois ao abrir o banco e derruba o app se
+ * divergirem. O CI publica o `createSql` esperado como anotacao para conferencia.
+ */
+private val CRIA_VENDAS = listOf(
+    "CREATE TABLE IF NOT EXISTS `vendas` (" +
+        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+        "`pecaId` INTEGER NOT NULL, " +
+        "`quantidade` INTEGER NOT NULL, " +
+        "`precoUnitario` REAL NOT NULL, " +
+        "`data` INTEGER NOT NULL, " +
+        "`comprador` TEXT, " +
+        "`observacoes` TEXT)",
+    "CREATE INDEX IF NOT EXISTS `index_vendas_pecaId` ON `vendas` (`pecaId`)",
+    "CREATE INDEX IF NOT EXISTS `index_vendas_data` ON `vendas` (`data`)",
+)
+
+val MIGRACAO_2_3 = object : Migration(2, 3) {
+
+    override fun migrate(connection: SQLiteConnection) {
+        CRIA_VENDAS.forEach { connection.execSQL(it) }
+    }
+
+    override fun migrate(db: SupportSQLiteDatabase) {
+        CRIA_VENDAS.forEach { db.execSQL(it) }
+    }
+}

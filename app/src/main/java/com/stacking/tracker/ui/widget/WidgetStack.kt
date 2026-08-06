@@ -15,7 +15,7 @@ import com.stacking.tracker.core.formatarBrl
 import com.stacking.tracker.core.formatarBrlAssinado
 import com.stacking.tracker.core.formatarPercentAssinado
 import com.stacking.tracker.core.hojeEmMillis
-import com.stacking.tracker.core.ozFinas
+import com.stacking.tracker.core.ozFinasUnidade
 import com.stacking.tracker.core.precoPorGrama
 import com.stacking.tracker.core.variacaoDoEstoque
 import kotlinx.coroutines.CoroutineScope
@@ -82,13 +82,20 @@ class WidgetStack : AppWidgetProvider() {
     ) {
         val container = (context.applicationContext as StackingApp).container
         val pecas = runCatching { container.pecaRepository.todas() }.getOrDefault(emptyList())
+        val vendas = runCatching { container.vendaRepository.todas() }.getOrDefault(emptyList())
         val atual = runCatching { container.cotacaoRepository.ultima() }.getOrNull()
         // Ultima cotacao ate a meia-noite de hoje: a referencia do dia.
         val referencia = runCatching {
             container.cotacaoRepository.spotEm(hojeEmMillis())
         }.getOrNull()
 
-        val ozFinasTotal = pecas.sumOf { it.ozFinas }
+        // So o que ainda esta em maos: prata vendida nao pode contar no widget.
+        val vendidoPorPeca = vendas.groupBy { it.pecaId }
+            .mapValues { (_, lista) -> lista.sumOf { it.quantidade } }
+        val ozFinasTotal = pecas.sumOf { peca ->
+            val emEstoque = (peca.quantidade - (vendidoPorPeca[peca.id] ?: 0)).coerceAtLeast(0)
+            peca.ozFinasUnidade * emEstoque
+        }
         val precoOz = atual?.precoOzBrl ?: 0.0
 
         val textoGrama = if (precoOz > 0.0) formatarBrl(precoPorGrama(precoOz)) else VAZIO

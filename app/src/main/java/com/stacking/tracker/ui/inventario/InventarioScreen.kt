@@ -307,7 +307,11 @@ private fun CartaoPeca(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Text(
-                    text = if (item.quantidade > 1) "${item.quantidade}x  ${peca.nome}" else peca.nome,
+                    text = when {
+                        item.vendidaPorCompleto -> "${peca.nome}  (vendida)"
+                        item.quantidadeEmEstoque > 1 -> "${item.quantidadeEmEstoque}x  ${peca.nome}"
+                        else -> peca.nome
+                    },
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,

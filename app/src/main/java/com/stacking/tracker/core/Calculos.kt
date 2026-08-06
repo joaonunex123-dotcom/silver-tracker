@@ -2,6 +2,7 @@ package com.stacking.tracker.core
 
 import com.stacking.tracker.data.local.Cotacao
 import com.stacking.tracker.data.local.Peca
+import com.stacking.tracker.data.local.Venda
 import java.time.ZoneId
 
 /** Gramas em uma onca troy. */
@@ -123,40 +124,75 @@ data class PecaCalculada(
     val peca: Peca,
     val precoOzBrlAtual: Double,
     val precoOzBrlNaCompra: Double,
+    val vendas: List<Venda> = emptyList(),
 ) {
+    /** Quantas foram compradas. Nao muda ao vender. */
     val quantidade: Int = peca.quantidade
+    val quantidadeVendida: Int = vendas.sumOf { it.quantidade }
+    val quantidadeEmEstoque: Int = (quantidade - quantidadeVendida).coerceAtLeast(0)
+    val vendidaPorCompleto: Boolean = quantidadeEmEstoque == 0 && quantidade > 0
 
-    /** Totais da linha. */
-    val pesoTroyOz: Double = peca.pesoTroyOz
-    val ozFinas: Double = peca.ozFinas
-    val precoPagoTotal: Double = peca.precoPagoTotal
-
-    /** Unitarios, para a tela de detalhe mostrar o preco de uma peca so. */
+    /** Unitarios. */
     val ozFinasUnidade: Double = peca.ozFinasUnidade
     val pesoTroyOzUnidade: Double = peca.pesoTroyOzUnidade
 
-    val valorAtual: Double = calcularValorAtual(peca, precoOzBrlAtual)
-    val valorSpotNaCompra: Double = calcularValorSpot(peca, precoOzBrlNaCompra)
+    /** Totais do que ainda esta em maos — e o que vale para a carteira. */
+    val ozFinas: Double = ozFinasUnidade * quantidadeEmEstoque
+    val pesoTroyOz: Double = pesoTroyOzUnidade * quantidadeEmEstoque
+    val custoEmEstoque: Double = peca.precoPago * quantidadeEmEstoque
 
-    // Premio e razao: da no mesmo calcular por unidade ou pelo total, desde que
-    // numerador e denominador estejam na mesma escala.
+    /** Da compra inteira, incluindo o que ja saiu. */
+    val precoPagoTotal: Double = peca.precoPagoTotal
+
+    val valorAtual: Double = ozFinas * precoOzBrlAtual
+
+    // Premio descreve a COMPRA, entao usa a quantidade comprada: vender depois nao
+    // muda o quanto se pagou acima do spot naquele dia.
+    val valorSpotNaCompra: Double = peca.ozFinas * precoOzBrlNaCompra
     val premioPercent: Double? = calcularPremioPercent(precoPagoTotal, valorSpotNaCompra)
     val premioReais: Double? =
         if (valorSpotNaCompra > 0.0) precoPagoTotal - valorSpotNaCompra else null
-    val lucro: Double? = if (precoOzBrlAtual > 0.0) valorAtual - precoPagoTotal else null
+
+    /** Ja embolsado: o que entrou nas vendas menos o custo do que saiu. */
+    val recebidoEmVendas: Double = vendas.sumOf { it.valorRecebido }
+    val custoVendido: Double = peca.precoPago * quantidadeVendida
+    val lucroRealizado: Double = recebidoEmVendas - custoVendido
+    val lucroRealizadoPercent: Double? =
+        if (custoVendido > 0.0) lucroRealizado / custoVendido * 100.0 else null
+
+    /** No papel: so sobre o que ainda esta em estoque. */
+    val lucro: Double? = if (precoOzBrlAtual > 0.0) valorAtual - custoEmEstoque else null
     val lucroPercent: Double? =
-        if (precoOzBrlAtual > 0.0 && precoPagoTotal > 0.0) {
-            (valorAtual - precoPagoTotal) / precoPagoTotal * 100.0
+        if (precoOzBrlAtual > 0.0 && custoEmEstoque > 0.0) {
+            (valorAtual - custoEmEstoque) / custoEmEstoque * 100.0
         } else {
             null
         }
 }
 
-fun Peca.calcular(cotacaoAtual: Cotacao?, resolvedor: ResolvedorSpot): PecaCalculada =
+/** Resumo de uma venda isolada, para a tela mostrar logo depois de registrar. */
+data class ResultadoVenda(
+    val venda: Venda,
+    /** Preco pago por UMA peca, na compra. */
+    val custoUnitario: Double,
+) {
+    val recebido: Double = venda.valorRecebido
+    val custo: Double = custoUnitario * venda.quantidade
+    val lucro: Double = recebido - custo
+    val lucroPercent: Double? = if (custo > 0.0) lucro / custo * 100.0 else null
+    val ganhou: Boolean = lucro > 0.0
+}
+
+fun Peca.calcular(
+    cotacaoAtual: Cotacao?,
+    resolvedor: ResolvedorSpot,
+    vendas: List<Venda> = emptyList(),
+): PecaCalculada =
     PecaCalculada(
         peca = this,
         precoOzBrlAtual = cotacaoAtual?.precoOzBrl ?: 0.0,
         precoOzBrlNaCompra = resolvedor.precoOzBrlEm(dataCompra),
+        vendas = vendas,
     )
 
 /** Numeros agregados da carteira inteira. */
@@ -174,22 +210,30 @@ data class ResumoCarteira(
     val lucroPercent: Double? = null,
     val premioMedioPercent: Double? = null,
     val custoMedioPorOzFina: Double? = null,
+    /** Ja embolsado nas vendas: recebido menos o custo do que saiu. */
+    val lucroRealizado: Double = 0.0,
+    val recebidoEmVendas: Double = 0.0,
+    val quantidadeVendida: Int = 0,
     val cotacao: Cotacao? = null,
 ) {
+    val temVendas: Boolean get() = quantidadeVendida > 0
     val temCotacao: Boolean get() = cotacao != null && cotacao.precoOzBrl > 0.0
 }
 
 fun resumirCarteira(pecas: List<PecaCalculada>, cotacao: Cotacao?): ResumoCarteira {
     if (pecas.isEmpty()) return ResumoCarteira(cotacao = cotacao)
 
-    val totalGramas = pecas.sumOf { it.peca.gramasTotal }
+    // Tudo daqui para baixo e sobre o que AINDA esta em maos: comparar valor de
+    // mercado com o custo de pecas ja vendidas daria um lucro fantasma.
+    val totalGramas = pecas.sumOf { it.peca.pesoGramas * it.quantidadeEmEstoque }
     val totalOzFinas = pecas.sumOf { it.ozFinas }
-    val totalInvestido = pecas.sumOf { it.precoPagoTotal }
+    val totalInvestido = pecas.sumOf { it.custoEmEstoque }
     val precoAtual = cotacao?.precoOzBrl ?: 0.0
     val valorMercado = if (precoAtual > 0.0) totalOzFinas * precoAtual else 0.0
 
     // Premio medio ponderado: soma dos pagamentos contra a soma dos spots das compras,
     // considerando apenas as pecas que tem spot de referencia no historico.
+    // Premio medio olha as compras, entao entra tambem o que ja foi vendido.
     val comReferencia = pecas.filter { it.valorSpotNaCompra > 0.0 }
     val spotAcumulado = comReferencia.sumOf { it.valorSpotNaCompra }
     val pagoAcumulado = comReferencia.sumOf { it.precoPagoTotal }
@@ -197,8 +241,11 @@ fun resumirCarteira(pecas: List<PecaCalculada>, cotacao: Cotacao?): ResumoCartei
         if (spotAcumulado > 0.0) (pagoAcumulado - spotAcumulado) / spotAcumulado * 100.0 else null
 
     return ResumoCarteira(
-        quantidadePecas = pecas.sumOf { it.quantidade },
-        linhas = pecas.size,
+        quantidadePecas = pecas.sumOf { it.quantidadeEmEstoque },
+        linhas = pecas.count { it.quantidadeEmEstoque > 0 },
+        lucroRealizado = pecas.sumOf { it.lucroRealizado },
+        recebidoEmVendas = pecas.sumOf { it.recebidoEmVendas },
+        quantidadeVendida = pecas.sumOf { it.quantidadeVendida },
         totalGramas = totalGramas,
         totalOzTroy = pecas.sumOf { it.pesoTroyOz },
         totalOzFinas = totalOzFinas,

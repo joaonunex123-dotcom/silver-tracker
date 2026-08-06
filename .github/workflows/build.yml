@@ -66,6 +66,17 @@ jobs:
 
           echo "::error title=Fim do log::$(tail -n 40 gradle.log | codificar)"
 
+      # O Room compara o schema gerado com o que a migracao produziu e derruba o
+      # app se divergirem. Como o log do Actions exige login, o createSql esperado
+      # sai como anotacao, que e publica.
+      - name: Schema do Room esperado
+        if: always()
+        run: |
+          ARQ=$(ls app/schemas/*/3.json 2>/dev/null | head -n 1)
+          if [ -z "$ARQ" ]; then echo "::notice::schema v3 nao gerado"; exit 0; fi
+          SQL=$(grep -o '"createSql": "[^"]*vendas[^"]*"' "$ARQ" | sed 's/%/%25/g' | awk '{ printf "%s%%0A", $0 }')
+          echo "::notice title=createSql que o Room espera::${SQL}"
+
       - name: Publica o APK como artefato
         uses: actions/upload-artifact@v4
         if: always()

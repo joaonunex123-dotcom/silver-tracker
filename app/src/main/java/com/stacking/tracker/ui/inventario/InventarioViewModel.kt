@@ -43,11 +43,13 @@ class InventarioViewModel(container: ContainerApp) : ViewModel() {
     val estado: StateFlow<EstadoInventario> = combine(
         container.pecaRepository.observarTodas(),
         container.cotacaoRepository.observarHistorico(),
+        container.vendaRepository.observarTodas(),
         filtro,
-    ) { pecas, historico, f ->
+    ) { pecas, historico, vendas, f ->
         val resolvedor = ResolvedorSpot(historico)
         val atual = historico.firstOrNull()
-        val calculadas = pecas.map { it.calcular(atual, resolvedor) }
+        val porPeca = vendas.groupBy { it.pecaId }
+        val calculadas = pecas.map { it.calcular(atual, resolvedor, porPeca[it.id].orEmpty()) }
 
         val termo = f.busca.trim().lowercase()
         val filtradas = calculadas
