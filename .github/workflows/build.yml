@@ -69,13 +69,16 @@ jobs:
       # O Room compara o schema gerado com o que a migracao produziu e derruba o
       # app se divergirem. Como o log do Actions exige login, o createSql esperado
       # sai como anotacao, que e publica.
-      - name: Schema do Room esperado
+      # O Room compara o schema que ele gera com o estado que a migracao deixou, e
+      # derruba o app se divergirem. Como o log do Actions exige login, o schema
+      # gerado vai junto no Release, que e publico, para poder ser conferido.
+      - name: Junta os schemas do Room
         if: always()
         run: |
-          ARQ=$(ls app/schemas/*/3.json 2>/dev/null | head -n 1)
-          if [ -z "$ARQ" ]; then echo "::notice::schema v3 nao gerado"; exit 0; fi
-          SQL=$(grep -o '"createSql": "[^"]*vendas[^"]*"' "$ARQ" | sed 's/%/%25/g' | awk '{ printf "%s%%0A", $0 }')
-          echo "::notice title=createSql que o Room espera::${SQL}"
+          mkdir -p publicar
+          cp -r app/schemas publicar/ 2>/dev/null || true
+          tar -czf schemas-room.tar.gz -C publicar . 2>/dev/null || true
+          ls -la schemas-room.tar.gz || echo "sem schemas"
 
       - name: Publica o APK como artefato
         uses: actions/upload-artifact@v4
@@ -101,5 +104,6 @@ jobs:
         run: |
           gh release create "$GITHUB_REF_NAME" \
             app/build/outputs/apk/debug/app-debug.apk \
+            schemas-room.tar.gz \
             --title "$GITHUB_REF_NAME" \
             --notes "APK de debug, assinado com a chave de debug padrao. No celular, autorize a instalacao de apps de fontes desconhecidas."
